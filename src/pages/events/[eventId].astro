@@ -1,0 +1,14 @@
+---
+import GameApp from '../../components/GameApp';
+import '../../styles/global.css';
+export const prerender = false;
+const eventId = (Astro.params.eventId ?? '').toLowerCase();
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId)) return Astro.redirect('/');
+Astro.response.headers.set('Cache-Control','private, no-store');
+Astro.response.headers.set('Referrer-Policy','no-referrer');
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>Play · GDG Bingo</title></head>
+  <body><main><a href="/">GDG Bingo</a><GameApp eventId={eventId} client:load /></main></body>
+</html>

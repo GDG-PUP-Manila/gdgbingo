@@ -1,0 +1,1 @@
+ALTER TABLE "claim" DROP CONSTRAINT "claim_confirmer_unique";

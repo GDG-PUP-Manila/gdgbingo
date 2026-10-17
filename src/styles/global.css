@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root { font-family: system-ui, sans-serif; color: #172b3d; background: #f6f8fa; color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 920px; padding: 20px 12px 60px; margin: auto; }
+h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); letter-spacing: -.04em; margin-bottom: .3em; }
+h2 { font-size: 1.25rem; margin: 0 0 16px; }
+h3 { font-size: 1rem; margin: 20px 0 10px; }
+p { line-height: 1.6; }
+a { color: #1553aa; text-decoration: underline; text-underline-offset: 3px; }
+button, input, select { font: inherit; }
+button, .button { min-height: 44px; padding: 10px 14px; border-radius: 8px; border: 1px solid #63758a; background: white; cursor: pointer; color: inherit; }
+button.primary { background: #1553aa; border-color: #1553aa; color: white; }
+button:disabled { opacity: .6; cursor: default; }
+:focus-visible { outline: 3px solid #a64100; outline-offset: 3px; }
+input[type=text] { width: 100%; padding: 12px; min-height: 44px; border: 1px solid #63758a; border-radius: 8px; background: white; }
+input[type=checkbox] { width: 22px; height: 22px; flex-shrink: 0; }
+label { display: block; font-weight: 600; margin: 12px 0 6px; }
+.panel { padding: 20px; background: white; border: 1px solid #d2dbe4; border-radius: 12px; margin-top: 16px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+.muted { color: #42566e; font-size: .92rem; }
+.notice { padding: 12px 16px; border-left: 4px solid #1553aa; background: #edf4ff; overflow-wrap: anywhere; }
+.tabs { display: flex; gap: 8px; margin: 24px 0 10px; }
+.tabs button { flex: 1; }
+.tabs button[aria-pressed=true] { background: #172b3d; color: white; }
+.card { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 5px; margin: 16px 0; }
+.card button { min-height: 112px; padding: 7px 3px; overflow-wrap: anywhere; font-size: .82rem; line-height: 1.35; }
+.card button.marked { background: #e0f3e9; color: #184b32; border: 2px solid #246443; }
+.card button[aria-pressed=true] { outline: 3px solid #1553aa; outline-offset: 1px; }
+.code { font-family: ui-monospace,monospace; overflow-wrap: anywhere; letter-spacing: .03em; }
+.check-label { display: flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 400; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #d2dbe4; }
+caption { text-align: left; font-weight: 700; padding: 10px 0; }
+@media (max-width: 420px) { .panel { padding: 12px; } .card { gap: 4px; } .card button { min-height: 120px; font-size: .78rem; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

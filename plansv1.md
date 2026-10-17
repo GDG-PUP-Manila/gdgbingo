@@ -16,7 +16,9 @@ Initial readiness target: a successful 350-participant burst test and a rehearsa
 
 ## Scope
 
-Include one active round per event, versioned 5 x 5 cards, controlled invitations, persistent identity, proposed six-code allowance, one confirmation per other participant, line/blackout detection, countdown, periodic board refresh, host start/close, consent-aware reveal, and exports.
+Include one active round per event, versioned 5 x 5 cards, controlled invitations, persistent identity, two-code allowance, up to two confirmations per other participant, line/blackout detection, countdown, periodic board refresh, host start/close, consent-aware reveal, and exports.
+
+Participants exchange codes through Teams DMs, then paste them into the website. The app does not send/read Teams messages or email bingo codes. Website sign-in remains separate from messaging. Verify attendee-to-attendee DM access, including guest access, in the event rehearsal.
 
 Defer Teams bot/tenant integration, live subscriptions, chat, booth quests, automated recruitment messages, payments, and a general-purpose event builder. Multiple events may fit the schema without requiring a full event-management product.
 
@@ -57,7 +59,7 @@ Exit: one participant gets exactly one stable card and the configured code allow
 - Calculate square counts, lines, and blackout from committed claims.
 - Enforce database-time deadlines and coordinate manual closure with in-flight claims.
 - Keep unrelated joins/claims concurrent: use compatible event-state locks and narrow code-row locks, rather than an exclusive event-wide lock per mutation. Test deterministic lock ordering and bounded retries.
-- Handle invalid/spent codes, repeated squares/people, self-claims, and temporary errors clearly.
+- Handle invalid/spent codes, repeated squares, self-claims, and temporary errors clearly.
 - Preserve input during failures and restore the card after refresh or reconnect.
 
 Required checks:
@@ -70,7 +72,7 @@ Required checks:
 | Request ID reused with changed input | Rejected |
 | Self-claim or code from another event | Rejected; code remains unspent |
 | Two codes submitted for one square concurrently | One claim; losing code remains usable |
-| Two squares from one confirmer concurrently | One claim under the proposed rule |
+| Two squares from one confirmer concurrently | Both commit when using two distinct codes and different squares |
 | Forged identity, invalid square, or free-cell claim | Rejected |
 | Before opening, after deadline, or during closure | Deterministic enforcement of timing policy |
 | Refresh, rejoin, or sign in again | Same participation, layout, and codes |

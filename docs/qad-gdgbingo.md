@@ -3,7 +3,7 @@ spine_type: QAD
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.2
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -20,8 +20,23 @@ reconciled: 2026-10-18
 
 ## 1. Strategy
 
-- Unit tests (Vitest) for pure logic: shuffling, scoring, CSV neutralisation, digest and encryption helpers.
-- Integration tests (Vitest) against a real PostgreSQL for join, claim, closure, rate limiting, and every invariant. Concurrency cases fire parallel requests.
+Execution status: the case register below is the full acceptance plan. A subset
+is implemented and tested as recorded in `docs/development-status.md`.
+Do not infer a case pass merely from similarity to an executable test.
+Coverage matrices describe written cases, not passing tests. Record future
+results with commit SHA, environment/versions, command, date, outcome, and
+redacted evidence location; a document review cannot mark a runtime test passed.
+
+Isolated Phase 1 experiments now have local results in
+[`spikes/phase1/results.md`](../spikes/phase1/results.md). Eleven auth/API checks
+use simulated upstream responses; eight database checks use real local
+PostgreSQL with a reduced schema. A follow-up run also passed all eight database
+checks through actual Neon Pool/Drizzle on PostgreSQL 18.6. They remain partial
+design evidence, not a pass for this product acceptance suite, live OAuth,
+remaining database fault cases, or the 350-player path.
+
+- Unit tests (Node test runner) for pure logic: shuffling, scoring, CSV neutralisation, digest and encryption helpers.
+- Integration tests (Node test runner) against a real PostgreSQL for join, claim, closure, rate limiting, and invariants. Concurrency cases fire parallel requests.
 - Browser tests (Playwright) for join, claim, board, host flows, and accessibility checks with axe.
 - Load test (k6) for the 350-player scenario: local first; hosted only with provider authorisation.
 - Manual: phone layouts on real devices, screen reader pass, rehearsal with test attendees.
@@ -78,7 +93,7 @@ reconciled: 2026-10-18
 |----|--------|--------|---------|------------------|
 | AB-01 | PRD-F4 | Race | Two players redeem one code concurrently | Exactly one claim |
 | AB-02 | PRD-F4 | Race | Two codes onto one square concurrently | One claim; losing code usable |
-| AB-03 | PRD-F4 | Race | Two squares from one confirmer concurrently | One claim |
+| AB-03 | PRD-F4 | Race | Two squares from one confirmer concurrently, with distinct codes | Both claims commit |
 | AB-04 | PRD-F4 | Enumeration | Script guesses codes | Rate limited; no hits within budget |
 | AB-05 | PRD-F1 | Forged identity | Body includes another user ID | Ignored; session identity used |
 | AB-06 | PRD-F1 | Concurrent joins | Same user joins from two tabs at once | One participation |
@@ -95,6 +110,15 @@ reconciled: 2026-10-18
 | AB-17 | PRD-F13 | Oversized input | 1 MB display name | 413 / validation error |
 | AB-18 | PRD-F4 | Throughput | 350 players claiming unrelated codes during a close attempt | Claims proceed concurrently; close orders cleanly; no deadlock leaks a spent code |
 | AB-19 | PRD-F1 | Shared network | 50 attendees sign in from one public IP | All authenticate; none blocked by IP throttling |
+| AB-20 | PRD-F4 | Concurrent identical retry | Hold original transaction, send same event/claimant/request ID and payload | One 201, eventual replay 200; same claim ID, no code_spent or second claim |
+| AB-21 | PRD-F4 | Concurrent changed payload | Same request ID with a different valid code/square, while first succeeds | Wait, then 409 request_id_reused; second code unspent |
+| AB-22 | PRD-F4, PRD-F6 | Retry overlaps closure | Identical duplicate waits while original succeeds and host closes | Original success replayed after closure; no round_not_open for committed replay |
+| AB-23 | PRD-F4 | Constraint failure recovery | Force named 23505 constraints in the claim transaction | Full rollback before fresh lookup/classification; no query in aborted transaction; losing code not newly spent |
+| AB-24 | PRD-F4 | Unknown commit outcome | Drop connection/acknowledgement at COMMIT with committed and rolled-back variants | Same-ID recovery yields original claim or safe re-attempt; unresolved result_unknown never asserts unspent; no duplicate claim |
+
+For AB-20–AB-24 use deterministic barriers or held locks, not timing-only
+sleeps. Check request-lock release on commit, rollback, and timeout with the
+selected pooled driver. Distinct request IDs must not be serialised globally.
 
 ### 4.1 Negative tests (invariants)
 
@@ -115,9 +139,9 @@ reconciled: 2026-10-18
 | PRD-F1 | H-01 | S-01, S-02, S-20 | AB-05, AB-06, AB-19 |
 | PRD-F2 | H-02 | S-03 | AB-07 |
 | PRD-F3 | H-03 | S-10 | AB-08 |
-| PRD-F4 | H-04 | S-04 to S-09 | AB-01 to AB-04, AB-18 |
+| PRD-F4 | H-04 | S-04 to S-09 | AB-01 to AB-04, AB-18, AB-20 to AB-24 |
 | PRD-F5 | H-05 | S-10 | AB-09 |
-| PRD-F6 | H-06 | S-11 | AB-10 |
+| PRD-F6 | H-06 | S-11 | AB-10, AB-22 |
 | PRD-F7 | H-07 | S-12, S-13 | AB-11 |
 | PRD-F8 | H-08 | S-14 | AB-12 |
 | PRD-F9 | H-09 | S-15 | AB-13 |

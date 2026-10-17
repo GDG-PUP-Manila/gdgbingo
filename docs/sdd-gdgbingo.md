@@ -3,7 +3,7 @@ spine_type: SDD
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.2
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -15,8 +15,8 @@ reconciled: 2026-10-18
 
 **PRD:** [prd-gdgbingo.md](prd-gdgbingo.md)
 
-Derived from the owner's [architecture.md](../architecture.md). Design-first: no
-code exists yet.
+Derived from the owner's [architecture.md](../architecture.md). Application foundation is in progress under the owner's Draft-development authorisation. Isolated integration experiments live
+in `spikes/phase1/`; see their results before treating a design as verified.
 
 ---
 
@@ -63,7 +63,7 @@ flowchart LR
 
 ## 3. Data model
 
-**Schema file:** none yet (design-first)
+**Schema file:** `src/server/db/schema.ts`; generated SQL in `drizzle/`.
 
 The ERD below is the schema contract (hard rule 16): code may only use the
 entities, fields, and relationships it defines. The planned schema location is
@@ -183,15 +183,15 @@ erDiagram
 
 | Entity | Serves | Constrained by | Data class | Retention | Notes |
 |--------|--------|----------------|------------|-----------|-------|
-| event | PRD-F6 | INV-4 | internal | TBD(owner) per LOG Q7 | One active round per event |
+| event | PRD-F6 | INV-4 | internal | 30 days after round end | One active round per event |
 | event_host | PRD-F8 | INV-6 | internal | Event lifetime | Host authority is server-side only |
 | invitation | PRD-F1 | INV-3, INV-5 | secret | Until event retention ends | Only the digest is stored |
-| participation | PRD-F1, PRD-F10 | INV-5 | PII | TBD(owner) per LOG Q7 | Display name is not identity |
+| participation | PRD-F1, PRD-F10 | INV-5 | PII | 30 days after round end | Display name is not identity |
 | square | PRD-F2, PRD-F9 | — | public | Indefinite | Versioned by `card_version` |
 | card_cell | PRD-F2 | INV-5 | internal | Event retention | Persisted layout |
 | code | PRD-F3, PRD-F4 | INV-1, INV-2, INV-3 | secret | Event retention | Digest for lookup, ciphertext for redisplay |
 | claim | PRD-F4, PRD-F5, PRD-F9 | INV-1, INV-2, INV-4 | internal | Event retention | Server timestamp only |
-| skill_selection | PRD-F10 | — | PII | TBD(owner) per LOG Q7 | Separate from claim-derived skills |
+| skill_selection | PRD-F10 | — | PII | 30 days after round end | Separate from claim-derived skills |
 | host_audit_event | PRD-F14 | INV-3 | internal | Event retention | Never stores tokens |
 | rate_limit_bucket | PRD-F12 | INV-7 | internal | Expires with bounded retention | Replaces paid Redis |
 
@@ -206,7 +206,6 @@ erDiagram
 | UNIQUE (event_id, owner_participation_id, ordinal) | code | Fixed allowance, no extra codes | INV-5 |
 | UNIQUE (code_id) | claim | One claim per code | INV-1 |
 | UNIQUE (event_id, claimant_participation_id, square_id) | claim | A square is claimed once | PRD-F4 |
-| UNIQUE (event_id, claimant_participation_id, confirmer_participation_id) | claim | One confirmation per other participant (pending LOG Q2) | PRD-F4 |
 | UNIQUE (event_id, claimant_participation_id, request_id) | claim | Idempotent retries | INV-1 |
 | CHECK (claimant_participation_id <> confirmer_participation_id) | claim | No self-claims | PRD-F4 |
 | UNIQUE (event_id, auth_user_id) | event_host | No duplicate host rows | INV-6 |
@@ -243,13 +242,13 @@ mutations. Private responses send `Cache-Control: private, no-store`.
 
 | Concern | Approach | Serves |
 |---------|----------|--------|
-| Authentication | Neon Auth session validated on every on-demand request; production OAuth provider with organiser-owned credentials, never the shared development email sender or test-user-only OAuth (pending LOG Q3) | PRD-F1, PRD-F8 |
+| Authentication | Neon Auth session validated on private on-demand requests; candidate Astro adapter uses the generic Neon server toolkit with a per-request cookie context and same-origin proxy; production OAuth/live lifecycle pending LOG Q3 and #8 | PRD-F1, PRD-F8 |
 | Authorization | Participation looked up from session user + event; host role from `event_host`; never from request body | PRD-F3, PRD-F8, PRD-F11 |
 | Validation | Schema-validated inputs (square key, code format, UUID request ID); server derives everything else | PRD-F4 |
 | Error handling | Typed domain errors mapped to 4xx with stable codes; unexpected errors 5xx with no token data; client keeps input and reuses request ID | PRD-F4, PRD-F13 |
 | Secrets | Env vars on Vercel (database URL, auth secrets, code digest key, encryption key); never `PUBLIC_`-prefixed | INV-3 |
 | Rate limiting | Atomic PostgreSQL bucket update per participation and action, never per IP (attendees share networks); bounded retention | PRD-F12 |
-| Concurrency | Shared event-state lock for joins and claims, exclusive lock only for host state transitions; fixed lock order (event, then code); bounded deadlock retries | PRD-F4, PRD-F6 |
+| Concurrency | Claims: transaction-scoped advisory lock per event/claimant/request ID, then shared event lock, then code-row lock; closure: exclusive event lock only; full rollback before constraint-error recovery; bounded retries and unknown-COMMIT recovery per RFC 001 | PRD-F4, PRD-F6 |
 | Caching | Public board cached at Vercel CDN with short TTL; everything else `private, no-store` | PRD-F7 |
 | Polling | 30 s jittered, visibility-gated, non-overlapping, exponential backoff on errors, stops after closure | PRD-F7, INV-7 |
 
@@ -259,12 +258,14 @@ cookies, and is cached.
 
 ### 5.1 Invariant enforcement
 
+Implementation is in progress. See `docs/development-status.md` for executable evidence and remaining gaps; design coverage alone is not runtime evidence.
+
 | INV-# | Enforced by | Location | How |
 |-------|-------------|----------|-----|
 | INV-1 | Claim transaction + unique index | `src/server/game/claim.ts` | `SELECT ... FOR UPDATE` on code row; `UNIQUE (code_id)` on claim |
 | INV-2 | Claim transaction | `src/server/game/claim.ts` | Claim insert and code update in one transaction; any rejection rolls back both |
-| INV-3 | Response serializers, log redaction, crypto module | `src/server/http/`, `src/server/crypto/` | Board DTO has no code fields; logger redacts tokens; only digests stored |
-| INV-4 | API routes and game module | `src/pages/api/`, `src/server/game/` | Identity from session; timing from `now()` in SQL; scores computed server-side |
+| INV-3 | Response serializers, log redaction, crypto module | `src/server/http/`, `src/server/crypto/` | Board DTO has no code fields; logger redacts tokens; code lookup uses keyed digests, redisplay uses ciphertext; invitations use digests; no plaintext tokens stored |
+| INV-4 | API routes and game module | `src/pages/api/`, `src/server/game/` | Identity from session; timing from fresh database clock at admission; scores computed server-side |
 | INV-5 | Join transaction + unique indexes | `src/server/game/join.ts` | `UNIQUE (event_id, auth_user_id)`; insert-or-return in one transaction |
 | INV-6 | Auth module guards | `src/server/auth/` | `requireParticipation` / `requireHost` on every private route |
 | INV-7 | Stack choice and polling policy | `docs/build-gdgbingo.md` §5 | No paid dependencies; backoff and stop rules bound usage |

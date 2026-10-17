@@ -35,7 +35,7 @@ Production and preview/test use separate Neon branches or databases.
 | Step | Command | Notes |
 |------|---------|-------|
 | Verify docs and tests | `npm test && python $SPINE_HOME/scripts/check.py docs/` | Must pass |
-| Apply migrations | `npm run db:migrate` with production `DATABASE_URL` | Manual, reviewed, never in build |
+| Apply migrations | `npm run db:migrate -- --environment=production --reviewed-production-migration` with matching environment and production URL | Manual, reviewed, never in build |
 | Deploy | Merge to `main` | Vercel builds and deploys |
 | Smoke check | `GET /api/events/:eventId/board` and sign-in flow | Also wakes the database |
 
@@ -46,11 +46,11 @@ Production and preview/test use separate Neon branches or databases.
 | Name | Purpose | Store | Required |
 |------|---------|-------|----------|
 | `DATABASE_URL` | Pooled Neon connection | Vercel env / local `.env` | yes |
-| `DATABASE_URL_UNPOOLED` | Migrations | Local `.env` only | yes |
-| `NEON_AUTH_*` | Neon Auth configuration (exact names from the Phase 1 spike) | Vercel env | yes |
+| `DATABASE_ENVIRONMENT` | Migration/seed guard: development or production | Local `.env` / migration shell | tooling only |
+| `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET` | Branch Auth URL and private signing secret | Vercel env / local `.env` | yes |
 | `CODE_DIGEST_KEY` | HMAC key for code and invitation digests | Vercel env | yes |
 | `CODE_ENCRYPTION_KEY` | Encrypts code redisplay values | Vercel env | yes |
-| `HOST_BOOTSTRAP_USER_IDS` | Initial host auth user IDs (seeding only) | Vercel env | no |
+| `--host-user-id` | Explicit synthetic-seed host ID | Local seed command, never browser role input | seed only |
 
 Values are never recorded in this document or any other doc in `docs/`.
 
@@ -99,6 +99,14 @@ Never log secrets, tokens, codes, invitations, or full request bodies (INV-3).
 **Diagnose:** log timings per route; Neon query stats.
 **Fix:** check region pairing and indexes in SDD §3.3; extend round if needed.
 **Escalate to:** slvdrvncntjvr
+
+### Retention
+
+Organisers run event-scoped cleanup 30 days after the round ends. First use
+`npm run retention -- --event-id=EVENT_UUID` to verify eligibility without
+deleting anything. After reviewing the selected event and export needs, add
+`--apply`. It deletes only the expired event's private records; public square
+definitions and other events remain. No automatic scheduled purge is deployed.
 
 ## 6. Backup and recovery
 

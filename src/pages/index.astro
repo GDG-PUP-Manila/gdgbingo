@@ -1,0 +1,32 @@
+---
+import ReturnToEvent from '../components/ReturnToEvent';
+import '../styles/global.css';
+export const prerender = true;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>GDG Bingo</title>
+  </head>
+  <body>
+    <main>
+      <h1>GDG Bingo</h1>
+      <p>Meet someone new. Find your next teammate.</p>
+      <section class="panel">
+        <h2>How to play</h2>
+        <ol>
+          <li>Open the event link shared by your organiser and sign in with Google.</li>
+          <li>Join with your private invitation. You get two outgoing codes.</li>
+          <li>Find someone who matches a square and message them on Teams.</li>
+          <li>Paste a code they give you to claim that square. Each code works once.</li>
+        </ol>
+        <p>A full row, column, or diagonal is bingo. The centre is free.</p>
+        <p class="muted">Each person has only two codes to give. Your own codes are for other players. Both can go to the same person for different squares.</p>
+      </section>
+      <p>Use your organiser’s event link to join. This development build is awaiting its deployment and event-readiness checks.</p>
+      <ReturnToEvent client:load />
+    </main>
+  </body>
+</html>

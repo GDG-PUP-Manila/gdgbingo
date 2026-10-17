@@ -3,7 +3,7 @@ spine_type: INDEX
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.2
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -26,13 +26,13 @@ Built on SPINE 0.3.0
 
 | Document | File | Version | Status | Updated | Reconciled |
 |----------|------|---------|--------|---------|------------|
-| IDEA · Idea Brief | [idea-gdgbingo.md](idea-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
-| PRD · Product Requirements | [prd-gdgbingo.md](prd-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
-| SDD · System Design | [sdd-gdgbingo.md](sdd-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
-| QAD · QA & Test Plan | [qad-gdgbingo.md](qad-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
+| IDEA · Idea Brief | [idea-gdgbingo.md](idea-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
+| PRD · Product Requirements | [prd-gdgbingo.md](prd-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
+| SDD · System Design | [sdd-gdgbingo.md](sdd-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
+| QAD · QA & Test Plan | [qad-gdgbingo.md](qad-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
 | OPS · Ops & Observability | [ops-gdgbingo.md](ops-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
-| BUILD · Build Guide | [build-gdgbingo.md](build-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
-| LOG · Session Log | [log-gdgbingo.md](log-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
+| BUILD · Build Guide | [build-gdgbingo.md](build-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
+| LOG · Session Log | [log-gdgbingo.md](log-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
 
 **Materialized at repo root (not in `docs/`):** `AGENTS.md` (SPINE pointer),
 `CLAUDE.md`, `GEMINI.md`, IDE rule pointers. Owner source drafts
@@ -57,6 +57,14 @@ the root as input material; this suite supersedes them where they differ.
 
 ## 3. Traceability Matrix
 
+These tables describe documentation coverage only. `yes`, design locations,
+and test IDs mean a specification or planned test exists; they do not mean
+application code enforces the rule or a product test has run. Root application
+code and executable tests now exist; see [development-status.md](development-status.md)
+for exact results and gaps. The isolated Phase 1 experiments remain separately
+recorded under `spikes/phase1`.
+RFC 001 is draft version 0.2.
+
 | PRD-F# | Feature | Priority | In SDD | In QAD | In RFC |
 |--------|---------|----------|--------|--------|--------|
 | PRD-F1 | Invitation join | Must-Have | yes | yes | N/A |
@@ -75,7 +83,7 @@ the root as input material; this suite supersedes them where they differ.
 
 ### 3.1 Invariant Matrix
 
-| INV-# | Rule | Status | Enforced in | Negative test |
+| INV-# | Rule | Status | Planned enforcement | Planned negative test |
 |-------|------|--------|-------------|---------------|
 | INV-1 | Never commit more than one claim per code | Active | SDD §5.1, RFC 001 | NT-01 |
 | INV-2 | Never spend a code on a rejected claim | Active | SDD §5.1, RFC 001 | NT-02 |
@@ -102,8 +110,9 @@ the root as input material; this suite supersedes them where they differ.
 - [x] Every open change record has propagated downstream
 - [x] Every feature ID referenced by SDD, RFC, or QAD still exists in the PRD
 - [x] §3 Traceability Matrix covers every Must-Have
-- [x] §3.1 Invariant Matrix: every `Active` invariant is enforced and has a negative test
-- [x] Validator green (`python $SPINE_HOME/scripts/check.py docs/`)
+- [x] §3.1 Invariant Matrix maps each `Active` invariant to a planned design and negative test
+- [ ] Application enforcement implemented and invariant tests recorded as passing
+- [ ] Current revision validated with SPINE 0.3.0 (`python $SPINE_HOME/scripts/check.py docs/ --strict`); evidence pending, see BUILD §3.1
 - [ ] Latest checkpoint verifies clean (`python $SPINE_HOME/scripts/checkpoint.py verify`)
 - [x] No secrets committed in `docs/`
 
@@ -111,7 +120,23 @@ the root as input material; this suite supersedes them where they differ.
 
 ## 6. Notes
 
-All documents are `Draft`. Per SPINE, implementation against Draft docs needs the
-owner's go-ahead; Phase 1 issues (decisions and spikes) are safe to start now.
+All documents remain `Draft`. On 2026-10-18 the owner authorised full phased
+development against the Draft specifications. This authorises implementation,
+not document validation, complete acceptance or event readiness.
 Owner decisions blocking a lock are listed in LOG §2 (Q1 to Q7) and tracked as
 GitHub issues under the "Phase 1" milestone.
+
+Phase 1 status: isolated local experiments have passed 11 auth/API checks,
+8 real local-PostgreSQL checks, Astro type checking, Vercel artifact generation,
+and dependency audit after a scoped override. See the
+[spike README](../spikes/phase1/README.md),
+[recorded results](../spikes/phase1/results.md), and
+[account setup instructions](../spikes/phase1/SETUP.md).
+A follow-up development-database run also passed all 8 transaction checks
+through Neon Pool and Drizzle's Neon adapter on PostgreSQL 18.6. A root application
+and compressed local 350-player database baseline now also exist; see the
+[development status](development-status.md). Hosted CDN/Auth/capacity checks
+remain open.
+Q1–Q7, full acceptance of #8–#11, and private validator access/evidence remain
+prerequisites for the appropriate document locks and first checkpoint in #12.
+A document lock approves a specification; it is not a product test pass.

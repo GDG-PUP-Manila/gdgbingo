@@ -1,0 +1,60 @@
+{
+  "name": "gdgbingo",
+  "version": "0.0.0",
+  "private": true,
+  "overrides": {
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    },
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.25.12"
+    }
+  },
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env node_modules/astro/bin/astro.mjs dev",
+    "build": "astro build",
+    "typecheck": "astro check",
+    "test": "node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
+    "verify:build": "node scripts/verify-build.mjs",
+    "setup:local": "node scripts/setup-local.mjs",
+    "seed": "node --env-file-if-exists=.env scripts/seed.mjs",
+    "test:load:local": "node scripts/load-local.mjs",
+    "retention": "node --env-file-if-exists=.env scripts/retention.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/react": "7.1.0",
+    "@astrojs/vercel": "11.0.15",
+    "@neondatabase/neon-js": "0.8.0-beta",
+    "@neondatabase/serverless": "1.2.0",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.4.0",
+    "drizzle-orm": "0.45.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwindcss": "4.3.3",
+    "ws": "8.22.0"
+  },
+  "optionalDependencies": {
+    "@embedded-postgres/windows-x64": "18.4.0-beta.17"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.1",
+    "drizzle-kit": "0.31.11",
+    "esbuild": "0.28.2",
+    "pg": "8.23.1",
+    "typescript": "5.9.3"
+  }
+}

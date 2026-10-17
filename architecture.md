@@ -10,6 +10,19 @@ A phone-friendly bingo website shared through Teams chat. Participants exchange 
 
 Design target: 300+ participants, to be validated against 350 concurrent simulated players. This is a target, not a measured capacity claim. Teams provides conversation and the event link; version one is a separate website without a Teams bot.
 
+## Teams DM interaction flow
+
+1. The organiser shares the website link in the Teams meeting chat.
+2. A participant joins the website, receives their private codes, and chooses a square.
+3. They contact another attendee in a Teams DM to ask whether that person matches the square.
+4. That attendee copies one of their own outgoing codes from the website and sends it in the Teams DM.
+5. The claimant pastes the code into the website for the selected square.
+6. The server validates and consumes the code, records the claim, and returns updated progress.
+
+Teams DMs are the participant-to-participant code exchange channel. The website does not send, read, or verify Teams messages; it validates submitted codes. No Teams bot, Microsoft Graph integration, or email delivery is required for code exchange. Participants need permission to DM one another in the meeting's Teams environment; verify that access during rehearsal, especially for guest attendees.
+
+Website sign-in is separate from Teams messaging and restores each player's private state. Its provider remains a decision to verify in Phase 1; use of Teams DMs does not imply Microsoft sign-in or tenant integration. Recruitment contact remains optional and consent-based.
+
 ## Proposed stack
 
 | Layer | Technology | Responsibility |
@@ -56,22 +69,22 @@ flowchart LR
 
 The browser receives public event data, its owner's card/codes, and limited board data. Database credentials and token-protection secrets stay server-side. Server code derives identity, permissions, scoring, and round timing; browser input is untrusted.
 
-## Proposed game rules
+## Game rules
 
-These are recommendations, not approved changes to the original game:
+Owner confirmed the original two-code rules on 2026-10-18:
 
 - A 5 x 5 card has a free centre and 24 claimable squares.
-- Each participant receives six outgoing codes per round.
+- Each participant receives two outgoing codes per round.
 - Each code confirms one square for one other participant, once globally.
-- A claimant can accept only one confirmation from each other participant per round.
+- Both of another participant's codes may confirm two different squares; each code is single-use globally.
 - Reject self-claims, repeated squares, spent codes, and claims outside the active round.
 - Any full row, column, or diagonal qualifies as a line. Calculate lines and blackout on the server.
 - Shuffle the same versioned square set per participant and persist the layout.
 - Exhausting outgoing codes does not stop a player receiving confirmations.
 
-At 300 players, two codes each provide only 600 total claims, averaging two per player. Even the easiest line requires four claims. Six codes provide 1,800 potential claims, enough in aggregate for everyone to complete a line, without guaranteeing participation or skill availability.
+At 300 players, two codes each provide only 600 total claims, averaging two per player. Even the easiest line requires four claims. The owner selected this scarcity deliberately; the game does not guarantee a line for every player.
 
-Under the proposed one-confirmation-per-person rule, blackout requires 24 distinct other participants. Under the original two-code rule without that restriction, it requires at least 12. Finalise prize tiers, round duration, and tie policy before opening the event.
+A blackout requires at least 12 distinct other participants. Development defaults approved: a 12-minute round and first-line qualification with equal-time ties shared. Prize fulfilment remains an organiser decision.
 
 ## Identity and joining
 
@@ -101,7 +114,7 @@ Production entry must not depend on Neon's shared development email sender. Pref
 | Optional skill selections | Participation and skill key; unique pair |
 | Host audit events | Event, actor, action, timestamp, safe metadata |
 
-Claims need unique constraints for code, claimant/square, claimant/confirmer, and claimant/request ID within their event scope. Enforce event membership and square eligibility in the transaction, backed by foreign keys and check constraints where appropriate.
+Claims need unique constraints for code, claimant/square and claimant/request ID within their event scope. Enforce event membership and square eligibility in the transaction, backed by foreign keys and check constraints where appropriate.
 
 Generate codes with cryptographically secure randomness. Use a server-keyed digest for lookup and encryption for redisplay on returning devices. Store invitation digests. Never put secrets or codes in board responses, URLs, analytics, or logs.
 
@@ -171,13 +184,13 @@ Use the included `vercel.app` HTTPS subdomain; a purchased domain is unnecessary
 
 ### Event request budget
 
-For exactly 300 players, the same assumptions imply about 12,000 board polls and at most 1,800 successful claims. Allowing 6,200 other requests gives a 20,000-request planning example, or 2% of Vercel Hobby's published monthly function-invocation allowance if every request invokes a function. This is arithmetic, not a measured usage forecast: CPU, memory, auth requests, transfer, other projects, and retries must also fit. The 350-player/25,000-request scenario below remains the verification target.
+For exactly 300 players, the same assumptions imply about 12,000 board polls and at most 600 successful claims. Allowing 7,400 other requests gives a 20,000-request planning example, or 2% of Vercel Hobby's published monthly function-invocation allowance if every request invokes a function. This is arithmetic, not a measured usage forecast: CPU, memory, auth requests, transfer, other projects, and retries must also fit. The 350-player/25,000-request scenario below remains the verification target.
 
-For 350 participants, six codes each, and a 20-minute open-board window:
+For 350 participants, two codes each, and a 20-minute open-board window:
 
 - Board polling at 30 seconds: approximately 14,000 requests if everyone keeps the board open.
-- Successful redemptions: at most 2,100, bounded by issued codes.
-- Reserve approximately 8,900 additional requests for entry, state reads, failed attempts, retries, host actions, and exports.
+- Successful redemptions: at most 700, bounded by issued codes.
+- Reserve approximately 10,300 additional requests for entry, state reads, failed attempts, retries, host actions, and exports.
 - Planning envelope: 25,000 dynamic requests per event; this is an estimate, not a hard app-enforced cap. Measure actual auth and API call amplification separately.
 
 Reserve at least 50,000 unused Vercel function invocations for the event and recovery, in addition to the measured CPU, memory, and transfer requirements. Include rehearsals and other projects sharing allowances. These are monthly-cycle resources: moving tests to another day does not restore them. Closed/idle tabs must not poll indefinitely. Unexpected traffic can exhaust free quotas despite rate limits; implement bounded exponential backoff and an organiser pause procedure.
@@ -199,7 +212,7 @@ Service charges are the $0 constraint; existing devices, internet access, and or
 
 ## Decisions to approve
 
-1. Six outgoing codes and one accepted confirmation per other participant.
+1. Approved: two outgoing codes; both may be used by the same other participant.
 2. Sign-in method, invitation distribution, and recovery.
 3. Square set, shuffled layout, prizes, deadline, and tie policy.
 4. Public names, recruitment consent, and retention period.

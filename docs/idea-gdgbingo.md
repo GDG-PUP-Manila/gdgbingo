@@ -3,7 +3,7 @@ spine_type: IDEA
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.2
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -22,7 +22,7 @@ suite wins.
 ## 1. One-line summary
 
 A phone-friendly networking bingo for a GDG event of 300+ attendees, where
-squares are confirmed by private single-use codes exchanged in person and
+squares are confirmed by private single-use codes exchanged through Teams DMs and
 results are calculated by the server, not trusted from the browser.
 
 ## 2. The problem
@@ -48,7 +48,8 @@ Explicit non-goals for version one. Anything listed here must not appear in the
 PRD, the SDD, or the code without a change record.
 
 - A Microsoft Teams bot, Teams app, or tenant integration. Teams is used only to
-  share the event link and for conversation.
+  share the event link, for conversation, and for participant-to-participant
+  code exchange in DMs. The website never reads or sends Teams messages.
 - Live push updates (WebSockets, SSE, paid realtime services). The board polls.
 - In-app chat or messaging between participants.
 - Booth quests, multiple concurrent rounds per event, or a general-purpose event

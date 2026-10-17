@@ -1,0 +1,20 @@
+---
+import AuthProbe from '../components/AuthProbe';
+export const prerender = true;
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>GDG Bingo — Phase 1 checks</title></head>
+  <body>
+    <main>
+      <h1>GDG Bingo — Phase 1 integration checks</h1>
+      <p>This isolated workspace checks deployment and integration behaviour. It is not the bingo application.</p>
+      <p>No participant registration, game codes, scoring, or live leaderboard is available here.</p>
+      <ul>
+        <li><a href="/api/public-status">Public cache-header check</a></li>
+        <li><a href="/api/session">Private session check</a></li>
+      </ul>
+      <AuthProbe client:load />
+    </main>
+  </body>
+</html>

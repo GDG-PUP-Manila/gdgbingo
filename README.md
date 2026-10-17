@@ -1,0 +1,93 @@
+# GDG Bingo
+
+Networking bingo for Teams events. Astro/React on Vercel; Neon Auth and
+PostgreSQL; Drizzle migrations. Players exchange codes manually through Teams
+DMs. The website does not send or read Teams messages.
+
+Application development is in progress. The application implements invitation
+joins, saved cards, two private outgoing codes, claims, scoring, board, host
+controls, reveal and exports. Hosted acceptance and event readiness are pending.
+See [development status](docs/development-status.md) and [specifications](docs/index.md).
+The isolated integration spike stays in `spikes/phase1`.
+
+## Local development
+
+Node 24 and npm are required. From the repository root:
+
+```powershell
+npm.cmd ci
+# Optional: create the ignored root environment from your existing development
+# spike. This never overwrites an existing .env or changes a database.
+npm.cmd run setup:local
+npm.cmd run dev
+```
+
+Otherwise copy `.env.example` to `.env` and configure it privately. Use the
+development Neon branch. Auth uses the same development Google provider and
+trusted localhost origin as the spike. Keep all environment variables
+server-only. Never copy `.env`, session cookies or private manifests into chat.
+
+`CODE_DIGEST_KEY` and `CODE_ENCRYPTION_KEY` must be different 32-byte hex values.
+Keep them stable for the lifetime of issued invitations/codes; changing either
+can invalidate outstanding tokens. Tokens have 128 bits of randomness; lookup
+uses purpose-separated HMAC; redisplay uses AES-256-GCM bound to event, owner and
+code ID. Only the authenticated owner's private response contains plaintext.
+
+## Checks
+
+```powershell
+npm.cmd test
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd run verify:build
+npm.cmd run test:e2e
+npm.cmd run test:load:local
+npm.cmd audit
+```
+
+The current foundation tests use Node's test runner and a real temporary local
+PostgreSQL 18 database on Windows x64. They never read `DATABASE_URL`, connect to
+Neon, or delete an existing database. Local data directories remain ignored for
+inspection; the runner stops PostgreSQL when finished. Playwright browser-island
+checks use mocked HTTP and require a prior build and an installed Chromium
+(`npx.cmd playwright install chromium`). The local 350-player workload measures
+service/database calls only. These checks do not establish Vercel capacity or
+all QAD cases passing.
+
+## Schema and synthetic event
+
+Generate SQL offline with `npm.cmd run db:generate`, then review files in
+`drizzle/`. Builds never migrate a database. Applying a migration is explicit:
+
+```powershell
+npm.cmd run db:migrate -- --environment=development
+npm.cmd run seed -- --development-only --host-user-id=YOUR_VALIDATED_AUTH_USER_ID
+```
+
+These commands change your configured development database. Seeding creates
+a new synthetic event, provisional 24-square set, host assignment and 350
+invitations in a private ignored `.private/` manifest. It does not create real
+attendees or delete data. A `prepared` manifest is not evidence of a committed
+seed; inspect the event before distributing it. Event creation and reviewed
+production migrations are separate release steps. Event-data retention is
+30 days after the round ends by the approved development default. Organisers
+run `npm.cmd run retention -- --event-id=EVENT_UUID` for an eligibility dry run;
+add `--apply` only after reviewing that event. It rejects rounds that ended
+fewer than 30 days ago. No automatic scheduled purge is deployed.
+
+## Deployment
+
+Use the **repository root** for the application Vercel project; the existing
+`spikes/phase1` root is only for the separate integration rehearsal. Framework:
+Astro; install: `npm ci`; build: `npm run build`; Node: 24.x. `vercel.json`
+selects Singapore (`sin1`) near the development database. Leave the output
+directory on its framework default. Configure the names in `.env.example` in
+the intended Vercel environment and add its exact HTTPS origin to Neon Auth.
+Google credentials remain configured in Neon; they are not runtime variables
+for this app.
+
+No Vercel deployment or production migration has been performed. The local
+350-player database baseline passed; hosted capacity is unverified.
+A Hobby account alone does not establish event eligibility or
+remaining quota. Resolve the [launch checks](docs/ops-gdgbingo.md) and production
+OAuth audience access before inviting attendees.
