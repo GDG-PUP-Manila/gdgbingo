@@ -103,7 +103,7 @@ own terminal, not by an agent in a blocking shell call.
 
 | Area | Convention |
 |------|-----------|
-| Branch policy | `main` is protected; work on `feat/<issue>-<slug>` or `fix/<issue>-<slug>`; merge by PR |
+| Branch policy | `main` is release (production deploys); `dev` is integration. Work on `feat/<issue>-<slug>` or `fix/<issue>-<slug>` off `dev`, PR into `dev`; promote `dev` → `main` by PR |
 | Commit format | Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`), referencing the issue (`#12`) |
 | Directory layout | `src/pages/` routes and `src/pages/api/` endpoints; `src/components/` React islands; `src/layouts/`; `src/server/` server-only modules; `drizzle/` migrations; `tests/`; `scripts/` |
 | Naming | kebab-case files, PascalCase components, camelCase functions, snake_case database columns |
