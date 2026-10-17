@@ -80,6 +80,13 @@ Manual close: `BEGIN; SELECT ... FROM event WHERE id = $1 FOR UPDATE; UPDATE eve
 Because redemptions hold `FOR SHARE`, close waits for in-flight redemptions to
 finish; redemptions starting after close see `closed_at` and are rejected.
 
+`FOR SHARE` locks are compatible with each other, so unrelated redemptions never
+serialise on the event row; an exclusive event lock per mutation is forbidden.
+Locks are always taken in the order event row, then code row. A transaction that
+fails with a deadlock (`40P01`) or serialization error (`40001`) is retried at
+most 3 times with jittered backoff, then returns `503 retry_later` with the code
+unspent.
+
 ### 4.1 Worked example
 
 ```
@@ -102,6 +109,8 @@ Result: one claim (C1), K spent once. Carol's own state is unchanged.
 | Close arrives mid-redemption | Close waits on the event row; redemption commits first |
 | Deadline passes mid-transaction | `now()` is transaction start time; a claim that started before the deadline may commit |
 | Database connection drops after commit | Client retries; step 4 returns success |
+| Deadlock or serialization failure | Up to 3 bounded retries, then `503 retry_later`; code unspent |
+| Many unrelated claims in one event | Run concurrently; only closure blocks them |
 
 ## 6. Security considerations
 
@@ -120,6 +129,6 @@ Rate limits bound guessing; codes carry at least 40 bits of entropy from a CSPRN
 
 ## 8. Verification
 
-QAD cases H-04, S-04 to S-09, AB-01 to AB-04, NT-01, NT-02, NT-04 run against a
+QAD cases H-04, S-04 to S-09, AB-01 to AB-04, AB-18, NT-01, NT-02, NT-04 run against a
 real PostgreSQL (Neon test branch or local Postgres), including a concurrency
 harness that fires parallel requests.

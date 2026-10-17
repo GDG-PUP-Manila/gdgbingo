@@ -70,6 +70,7 @@ reconciled: 2026-10-18
 | S-17 | PRD-F11 | Export by non-host | Player session | 403 |
 | S-18 | PRD-F12 | Limit exceeded | Burst of claims | 429 retryable; code unspent |
 | S-19 | PRD-F13 | Keyboard only | Tab through claim flow | All controls reachable; focus visible |
+| S-20 | PRD-F1 | Late join burst | 100 joins in the final minute before closure | All succeed within GDGBINGO-M2 |
 
 ## 4. Abuse cases
 
@@ -92,6 +93,8 @@ reconciled: 2026-10-18
 | AB-15 | PRD-F11 | CSV injection | Display name `=HYPERLINK(...)` | Cell neutralised |
 | AB-16 | PRD-F12 | Shared IP | 50 players behind one NAT | Each limited independently |
 | AB-17 | PRD-F13 | Oversized input | 1 MB display name | 413 / validation error |
+| AB-18 | PRD-F4 | Throughput | 350 players claiming unrelated codes during a close attempt | Claims proceed concurrently; close orders cleanly; no deadlock leaks a spent code |
+| AB-19 | PRD-F1 | Shared network | 50 attendees sign in from one public IP | All authenticate; none blocked by IP throttling |
 
 ### 4.1 Negative tests (invariants)
 
@@ -109,10 +112,10 @@ reconciled: 2026-10-18
 
 | PRD-F# | Happy | Sad | Abuse |
 |--------|-------|-----|-------|
-| PRD-F1 | H-01 | S-01, S-02 | AB-05, AB-06 |
+| PRD-F1 | H-01 | S-01, S-02, S-20 | AB-05, AB-06, AB-19 |
 | PRD-F2 | H-02 | S-03 | AB-07 |
 | PRD-F3 | H-03 | S-10 | AB-08 |
-| PRD-F4 | H-04 | S-04 to S-09 | AB-01 to AB-04 |
+| PRD-F4 | H-04 | S-04 to S-09 | AB-01 to AB-04, AB-18 |
 | PRD-F5 | H-05 | S-10 | AB-09 |
 | PRD-F6 | H-06 | S-11 | AB-10 |
 | PRD-F7 | H-07 | S-12, S-13 | AB-11 |

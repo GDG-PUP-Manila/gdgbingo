@@ -116,3 +116,5 @@ Never log secrets, tokens, codes, invitations, or full request bodies (INV-3).
 - [ ] Every network-exposed endpoint has auth, or a documented exception (public board, SDD §5)
 - [ ] Vercel Hobby eligibility recorded in LOG
 - [ ] Dated free-tier usage snapshot recorded before and after the load test
+- [ ] Production OAuth credentials configured; no reliance on the development email sender or OAuth test users
+- [ ] Joining opens 15–30 minutes before the round; attendees asked to sign in early

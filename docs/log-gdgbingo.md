@@ -19,6 +19,7 @@ reconciled: 2026-10-18
 
 | Date | Decision | Rationale | Docs touched |
 |------|----------|-----------|--------------|
+| 2026-10-18 | Incorporated main commit 4e75562 (production OAuth, early joining, shared-network testing, shared event locks with bounded deadlock retries, 300-player budget example) | Teammate update to architecture.md / plansv1.md | PRD, SDD, RFC, QAD, OPS |
 | 2026-10-18 | Work is tracked as GitHub issues in GDG-PUP-Manila/gdgbingo, one milestone per plan phase, each issue citing PRD-F# / INV-# | Owner asked for tasks as GitHub issues | index.md |
 | 2026-10-18 | Tier 3 SPINE suite, slug `gdgbingo` | 300+ users, deployed, other people depend on it on event day | all |
 | 2026-10-18 | Docs derived from owner drafts architecture.md and plansv1.md; drafts kept at repo root as source material | Owner-written intent; this suite supersedes them where they differ | all |

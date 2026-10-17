@@ -61,6 +61,9 @@ Priority vocabulary: `Must-Have`, `Should-Have`, `Could-Have`, `Dropped`.
 - Given a signed-in user with an unredeemed invitation, when they join, then one participation, one card, and the configured code allowance exist for them.
 - Given a user who already joined, when they join again from any device or retry the request, then the same participation is returned and no extra codes exist.
 - Given an invitation already redeemed by another user, when a different user submits it, then the join is rejected.
+- Sign-in uses a production-configured OAuth provider with the organiser's own credentials; no attendee depends on Neon's shared development email sender or OAuth test-user access.
+- Many attendees behind one public IP can sign in and join without being throttled as one client.
+- Joining opens 15–30 minutes before the round; sessions persist through gameplay; a late join burst still succeeds.
 - p95 join latency at most 3 s under the 350-player test after warm-up (GDGBINGO-M2).
 
 **PRD-F2 — Stable bingo card**
@@ -85,6 +88,7 @@ Priority vocabulary: `Must-Have`, `Should-Have`, `Could-Have`, `Dropped`.
 **PRD-F6 — Round lifecycle**
 - Claims before opening or after the deadline/closure are rejected deterministically, using database time.
 - Manual closure and in-flight claims are ordered by a transaction lock so each claim is either committed before closure or rejected.
+- Unrelated joins and claims run concurrently: mutations take a shared event-state lock, only closure takes an exclusive one.
 
 **PRD-F7 — Public board**
 - Board data is at most 45 s stale under normal connectivity (GDGBINGO-M4).

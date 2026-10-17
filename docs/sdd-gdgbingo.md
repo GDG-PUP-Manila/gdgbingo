@@ -243,12 +243,13 @@ mutations. Private responses send `Cache-Control: private, no-store`.
 
 | Concern | Approach | Serves |
 |---------|----------|--------|
-| Authentication | Neon Auth session validated on every on-demand request; OAuth sign-in so no paid email is required (pending LOG Q3) | PRD-F1, PRD-F8 |
+| Authentication | Neon Auth session validated on every on-demand request; production OAuth provider with organiser-owned credentials, never the shared development email sender or test-user-only OAuth (pending LOG Q3) | PRD-F1, PRD-F8 |
 | Authorization | Participation looked up from session user + event; host role from `event_host`; never from request body | PRD-F3, PRD-F8, PRD-F11 |
 | Validation | Schema-validated inputs (square key, code format, UUID request ID); server derives everything else | PRD-F4 |
 | Error handling | Typed domain errors mapped to 4xx with stable codes; unexpected errors 5xx with no token data; client keeps input and reuses request ID | PRD-F4, PRD-F13 |
 | Secrets | Env vars on Vercel (database URL, auth secrets, code digest key, encryption key); never `PUBLIC_`-prefixed | INV-3 |
-| Rate limiting | Atomic PostgreSQL bucket update per participation and action; bounded retention | PRD-F12 |
+| Rate limiting | Atomic PostgreSQL bucket update per participation and action, never per IP (attendees share networks); bounded retention | PRD-F12 |
+| Concurrency | Shared event-state lock for joins and claims, exclusive lock only for host state transitions; fixed lock order (event, then code); bounded deadlock retries | PRD-F4, PRD-F6 |
 | Caching | Public board cached at Vercel CDN with short TTL; everything else `private, no-store` | PRD-F7 |
 | Polling | 30 s jittered, visibility-gated, non-overlapping, exponential backoff on errors, stops after closure | PRD-F7, INV-7 |
 
