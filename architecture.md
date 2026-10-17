@@ -84,6 +84,8 @@ Display names are not identity. A public event link is not an invitation credent
 
 Verify Neon Auth integration, provider/email setup, redirect handling, and recovery before selecting the exact sign-in flow. Avoid depending on an untested burst of verification emails at event start.
 
+Production entry must not depend on Neon's shared development email sender. Prefer a supported OAuth provider configured with the organiser's own production credentials, plus the event invitation. Verify provider availability for attendees, account recovery, trusted domains, and same-network throttling. Open sign-in and joining 15–30 minutes before the round and retain sessions through gameplay; still test a late join burst. Production OAuth configuration and Astro session validation remain unresolved integration gates, not implemented features.
+
 ## Logical data model
 
 | Record | Key fields and constraints |
@@ -117,6 +119,8 @@ Generate codes with cryptographically secure randomness. Use a server-keyed dige
 Expected conflicts roll back cleanly. A failed claim must not consume its code. Two simultaneous redemptions must yield exactly one committed claim. Retries after a lost success response must remain safe even after closure.
 
 Use database time for deadlines. Specify and test how manual closure orders against in-flight claims, using compatible transaction locks. The browser countdown is informational.
+
+Avoid an exclusive lock on the event row for every join or claim: it would serialize unrelated players. Use compatible shared event-state locks for active mutations and an exclusive state-transition lock for host closure, with deterministic lock ordering and bounded deadlock retries. Keep code-row locks narrow and verify both throughput and closure ordering under concurrency.
 
 ## User and host surfaces
 
@@ -167,6 +171,8 @@ Use the included `vercel.app` HTTPS subdomain; a purchased domain is unnecessary
 
 ### Event request budget
 
+For exactly 300 players, the same assumptions imply about 12,000 board polls and at most 1,800 successful claims. Allowing 6,200 other requests gives a 20,000-request planning example, or 2% of Vercel Hobby's published monthly function-invocation allowance if every request invokes a function. This is arithmetic, not a measured usage forecast: CPU, memory, auth requests, transfer, other projects, and retries must also fit. The 350-player/25,000-request scenario below remains the verification target.
+
 For 350 participants, six codes each, and a 20-minute open-board window:
 
 - Board polling at 30 seconds: approximately 14,000 requests if everyone keeps the board open.
@@ -184,6 +190,7 @@ Use Vercel CDN response caching for a dedicated unauthenticated, public aggregat
 
 - All required services are on ongoing Free/Hobby plans; no trial expiry, paid add-on, or automatic paid upgrade is part of the runbook.
 - Hosting eligibility and the actual production auth/runtime combination are verified.
+- Attendees can authenticate without reliance on the development email sender; early joining, late join bursts, and shared-network access are tested. No player must rely on developer OAuth test-user access.
 - A 350-player test passes on the selected free configuration, subject to provider load-testing rules. Obtain provider authorisation where required; Vercel explicitly prohibits unauthorised load testing. Local tests alone do not establish hosted capacity.
 - Record invocation/request, CPU, memory, storage, transfer, and compute usage; retain enough headroom for the real event and recovery.
 - Verify recovery after quota errors without duplicate claims. If a gate fails, tune, reduce scope, or postpone; do not claim event readiness or upgrade automatically.
@@ -202,6 +209,7 @@ Service charges are the $0 constraint; existing devices, internet access, and or
 
 - Neon pooling: https://neon.com/docs/connect/connection-pooling
 - Neon Auth: https://neon.com/docs/auth/overview
+- Neon Auth production checklist: https://neon.com/docs/auth/production-checklist
 - Neon pricing: https://neon.com/pricing
 - Vercel plans: https://vercel.com/docs/plans
 - Vercel Hobby allowances and eligibility: https://vercel.com/docs/plans/hobby

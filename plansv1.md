@@ -31,6 +31,7 @@ Defer Teams bot/tenant integration, live subscriptions, chat, booth quests, auto
 - Establish Vercel Hobby eligibility for the actual owner/event/repository. If unsuitable or unresolved, record the Vercel-only/$0 constraint as unmet; do not change hosts or upgrade automatically.
 - Verify Astro's Vercel adapter, Node.js runtime, private-cache headers, public CDN caching, and transactional database access on the intended deployment configuration.
 - Select sign-in and recovery that require no paid SMTP or SMS service.
+- Verify production OAuth credentials and attendee access; do not rely on Neon shared development email delivery or OAuth test-user-only access. Test multiple attendees behind one public IP. Plan for players to sign in and join 15–30 minutes before the round.
 
 Exit: agreed rules and entry flow, with a verified path for authentication and transactional database access. Revise the draft if a selected integration does not meet requirements.
 
@@ -55,6 +56,7 @@ Exit: one participant gets exactly one stable card and the configured code allow
 - Implement atomic redemption, server-side permissions, indexed PostgreSQL rate-limit buckets with bounded retention, and request-ID retries. Do not depend on a paid Redis service.
 - Calculate square counts, lines, and blackout from committed claims.
 - Enforce database-time deadlines and coordinate manual closure with in-flight claims.
+- Keep unrelated joins/claims concurrent: use compatible event-state locks and narrow code-row locks, rather than an exclusive event-wide lock per mutation. Test deterministic lock ordering and bounded retries.
 - Handle invalid/spent codes, repeated squares/people, self-claims, and temporary errors clearly.
 - Preserve input during failures and restore the card after refresh or reconnect.
 
@@ -91,6 +93,7 @@ Exit: a host can run a round and export results; ordinary players cannot access 
 - Check phone layouts, keyboard use, focus handling, screen-reader labels, and contrast.
 - Run a 12-minute round inside a 20-minute scenario with 350 simulated participants: join burst, valid claims, contested codes, board reads, and closure. Follow the host's testing rules; Vercel requires authorisation for load testing. Do not run a hosted burst without required provider authorisation.
 - Test lost responses, slow connections, retries, cold database wake-up, and session recovery.
+- Test the actual production sign-in method, a late join burst, and shared-network attendees. Include auth/session checks in the measured request budget rather than assuming MAU allowance proves burst capacity.
 - Measure request latency/errors, query timings, transaction conflicts, connections, and provider usage.
 - Verify codes/secrets are absent from public responses and logs.
 - Fix failures, rerun affected checks, and document remaining limits.
@@ -119,6 +122,7 @@ Exit: written readiness evidence supports the expected attendance on Astro/Verce
 - Rehearse join, share, claim, qualify, close, reveal, and export with test attendees.
 - Remove rehearsal data using an event-scoped procedure before issuing real codes.
 - Distribute private invitations using the agreed process.
+- Open joining 15–30 minutes before gameplay and ask attendees to sign in early. Retain and verify sessions through the round; keep late joining functional.
 - Prepare the pinned Teams message, participant instructions, host checklist, and incident procedure.
 - Check remaining free quotas before opening registration and before the countdown; verify database wake-up with a smoke check. Avoid continuous keep-alive jobs that consume the monthly compute allowance.
 - During an outage, pause activity and communicate status; do not award prizes from uncommitted browser state.
