@@ -5,17 +5,20 @@ zero-footprint pointer. SPINE rules are not duplicated here. Fetch the canonical
 engine at session start and follow it.
 
 **Pinned engine:** SPINE 0.3.0
-**Source repo:** https://github.com/slvdrvncntjvr/spine
+**Source repo:** https://github.com/slvdrvncntjvr/spine (private; maintainer access only)
 **Tag:** v0.3.0
-**local_fallback:** `C:/Users/Vincent/spine`
+**local_fallback:** `~/spine`
 
 ## How to operate SPINE in this repo
 
 1. **Session start — read the engine.** Resolve in this order, stop at first hit:
    - `$SPINE_HOME/AGENTS.md` if the `SPINE_HOME` env var is set
-   - `C:/Users/Vincent/spine/AGENTS.md` (local_fallback above)
+   - `~/spine/AGENTS.md` (local_fallback above)
    - `~/.spine/engine/AGENTS.md`
-   - `https://raw.githubusercontent.com/slvdrvncntjvr/spine/v0.3.0/AGENTS.md`
+   - `https://raw.githubusercontent.com/slvdrvncntjvr/spine/v0.3.0/AGENTS.md` (private)
+
+   Contributors without SPINE access: skip this pointer and work from `docs/`
+   directly; `docs/build-gdgbingo.md` is the build guide.
 
    Local first is deliberate. Do not make a network call the precondition for
    doing any work. If all four fail, say so and stop rather than improvising a
