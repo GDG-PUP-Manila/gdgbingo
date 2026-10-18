@@ -96,16 +96,25 @@ Report the deployed URL and redacted outcomes to continue verification.
 - Publish the latest local recovery/privacy fixes and confirm Vercel builds
   that source revision. The local audit evidence is in
   [development-status.md](development-status.md#pre-tester-audit-after-successful-hosted-sign-in).
-- Use the trusted stable branch origin:
+- Use the public origin `https://gdgbingo.vercel.app` after confirming it is
+  trusted in Neon. The stable branch origin is an alternative preview:
   `https://gdgbingo-git-feat-8-phase1-spikes-gdgpupmnls-projects.vercel.app`.
   The earlier per-deployment URL failed the Neon callback-origin check.
-- Add each tester's Google account to the OAuth Testing audience and confirm
-  they can access the preview without organiser-only Vercel protection.
+- The owner has published Google OAuth as External/In production. Confirm a
+  non-test account can sign in with basic identity scopes and that the app
+  opens without organiser-only Vercel protection. Branding review is separate.
 - Create a fresh development rehearsal with the existing validated test host;
   event `28b13ac3-b8a8-45db-abfa-6f05914c8f8f` is closed. Follow the seed
   instructions in README; never restart it by editing database status.
-- Share the new event URL plus a separate unused invitation per tester.
-  Keep the invitation manifest private. Start the round only after they join.
+- The fresh development event is
+  `46bef90a-4e11-4c8e-b399-3fcd75f9e7f6`. Shared invitations were subsequently
+  authorised by the owner: deploy migration 0002 and its updated join service,
+  then share one link in the form
+  `https://gdgbingo.vercel.app/events/EVENT_UUID#invite=SHARED_INVITATION`.
+  Keep the manifest private; the browser strips the fragment and retains it
+  through sign-in. For production, apply the reviewed migration before deploying
+  this server version. Existing single-use invitations still work. Start the
+  round only after players join.
 - Recheck claim exchange, spent-code rejection, refresh, consent withdrawal,
   host close/reveal/export, and ordinary-player host denial on the deployed
   revision. Record results before expanding the tester group.

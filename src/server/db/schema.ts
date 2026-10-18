@@ -44,10 +44,13 @@ export const invitations = pgTable('invitation', {
   id: uuid('id').primaryKey().defaultRandom(),
   eventId: uuid('event_id').notNull().references(() => events.id),
   tokenDigest: bytea('token_digest').notNull().unique(),
+  reusable: boolean('reusable').notNull().default(false),
   participationId: uuid('participation_id'),
   expiresAt: time('expires_at'), createdAt: created(),
 }, t => [
   uniqueIndex('invitation_participation_unique').on(t.participationId).where(sql`${t.participationId} is not null`),
+  uniqueIndex('invitation_shared_event_unique').on(t.eventId).where(sql`${t.reusable}`),
+  check('invitation_shared_not_redeemed', sql`not ${t.reusable} or ${t.participationId} is null`),
   foreignKey({ columns: [t.eventId, t.participationId], foreignColumns: [participations.eventId, participations.id] }),
 ]);
 

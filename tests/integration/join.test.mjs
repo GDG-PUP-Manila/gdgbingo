@@ -77,6 +77,45 @@ test('production schema and join service against isolated real PostgreSQL', asyn
     await assert.rejects(joinEvent(db, keys, { ...input, userId: 'closed-user', invitation: await invite() }), { code: 'joining_closed' });
     assert.equal((await joinEvent(db, keys, input)).created, false);
   });
+  async function sharedEvent() {
+    const id=randomUUID(),token=newToken();
+    await pool.query('INSERT INTO event (id,slug,title,rules_version,card_version,code_allowance) VALUES ($1,$4,$2,1,$3,2)',[id,'Shared invitation test','test-v1',`shared-${id}`]);
+    await pool.query('INSERT INTO invitation (event_id,token_digest,reusable) VALUES ($1,$2,true)',[id,tokenDigest(keys,'invitation',token)]);
+    return {id,token,join:(userId,invitation=token)=>({eventId:id,userId,displayName:userId,invitation})};
+  }
+  await t.test('one shared invitation admits concurrent distinct accounts with separate cards and codes; same-account retries remain idempotent',async()=>{
+    const f=await sharedEvent();
+    const results=await Promise.all(Array.from({length:8},(_,i)=>joinEvent(db,keys,f.join(`shared-${i}`))));
+    assert.equal(new Set(results.map(row=>row.participationId)).size,8);
+    const states=await Promise.all(Array.from({length:8},(_,i)=>ownState(db,keys,f.id,`shared-${i}`)));
+    assert.ok(states.every(state=>state.card.length===25&&state.codes.length===2));
+    assert.equal(new Set(states.flatMap(state=>state.codes.map(code=>code.token))).size,16);
+    const retries=await Promise.all(Array.from({length:4},()=>joinEvent(db,keys,f.join('shared-0'))));
+    assert.ok(retries.every(row=>!row.created&&row.participationId===results[0].participationId));
+    assert.deepEqual(await ownState(db,keys,f.id,'shared-0'),states[0]);
+    const invite=(await pool.query('SELECT participation_id FROM invitation WHERE event_id=$1',[f.id])).rows[0];
+    assert.equal(invite.participation_id,null);
+    await assert.rejects(pool.query('UPDATE invitation SET participation_id=$1 WHERE event_id=$2',[results[0].participationId,f.id]),{code:'23514'});
+  });
+  await t.test('shared invitations are event-scoped, expirable and closed with their event; existing members can still return',async()=>{
+    const a=await sharedEvent(),b=await sharedEvent();
+    await assert.rejects(joinEvent(db,keys,b.join('wrong-room',a.token)),{code:'invitation_invalid'});
+    await assert.rejects(joinEvent(db,keys,a.join('wrong-code','invalid')),{code:'invitation_invalid'});
+    await joinEvent(db,keys,a.join('existing-shared'));
+    await pool.query("UPDATE invitation SET expires_at=clock_timestamp()-interval '1 second' WHERE event_id=$1",[a.id]);
+    await assert.rejects(joinEvent(db,keys,a.join('expired-shared')),{code:'invitation_invalid'});
+    await pool.query("UPDATE event SET status='closed' WHERE id=$1",[b.id]);
+    await assert.rejects(joinEvent(db,keys,b.join('closed-shared')),{code:'joining_closed'});
+    assert.equal((await joinEvent(db,keys,a.join('existing-shared','invalid'))).created,false);
+  });
+  await t.test('a failed shared join rolls back all player state and leaves the shared invitation usable',async()=>{
+    const f=await sharedEvent();
+    const failingDb={transaction:work=>db.transaction(async tx=>{await work(tx);throw new Error('injected-shared-rollback');})};
+    await assert.rejects(joinEvent(failingDb,keys,f.join('shared-rollback')),/injected-shared-rollback/);
+    assert.equal((await pool.query('SELECT count(*)::int AS n FROM participation WHERE event_id=$1',[f.id])).rows[0].n,0);
+    assert.equal((await joinEvent(db,keys,f.join('shared-rollback'))).created,true);
+    assert.equal((await joinEvent(db,keys,f.join('shared-next'))).created,true);
+  });
   await t.test('schema rejects cross-event ownership and non-centre free cells', async () => {
     const otherEvent = randomUUID();
     await pool.query('INSERT INTO event (id,slug,title,rules_version,card_version,code_allowance) VALUES ($1,$2,$3,1,$4,2)', [otherEvent, 'other', 'Synthetic other', 'test-v1']);

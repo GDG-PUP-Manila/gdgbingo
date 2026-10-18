@@ -369,3 +369,62 @@ intentionally public; keep the tag in future deployments to retain ownership
 verification. This prepares the site proof, but does not itself verify the
 property: publish the updated homepage to `https://gdgbingo.vercel.app/`,
 then select Verify in the owner's Search Console account.
+
+### Shared event invitation authorised
+
+The owner requested one event invitation usable by every participant. Migration
+`0002_shared_event_invitation.sql` adds a reusable flag defaulting false, one
+shared invitation per event, and a constraint preventing shared invitations
+from being assigned to a single participation. Existing individual invitations
+retain their one-account redemption behaviour. Shared invitations take read
+locks so distinct users can join concurrently; per-account advisory locking
+still makes repeated joins idempotent. Each account receives its own saved
+card and two gameplay codes. Expiry, round closure and host guards remain.
+
+Development seeding now defaults to one shared invitation; the explicit
+`--individual-invitations` option retains the older mode. The development-only
+shared-invitation script can add one to an existing event and safely retry
+using its private prepared manifest, without logging token values.
+
+After isolated PostgreSQL checks passed, the additive migration was applied
+to the configured development database. A shared invitation was created for
+fresh draft event `46bef90a-4e11-4c8e-b399-3fcd75f9e7f6`, with its plaintext
+saved only in the ignored `.private/shared-invitation-EVENT_UUID.json` manifest.
+Database readback verified the keyed digest, reusable state, no assigned
+participation and the unchanged single host. A repeated setup call reused
+the same invitation. No attendee was joined or round started by this setup.
+
+Verification: all 42 unit/database checks passed, including concurrent shared
+joins with distinct private codes, same-account retries, event isolation,
+expiry/closure, schema constraints and rollback recovery. Production build,
+artifact verification and Astro checking passed with zero diagnostics. The
+updated join service must be published before distributing the shared code;
+the previously deployed service only understands single-use invitations.
+All 20 Chromium browser cases also passed after the invitation wording update.
+At that checkpoint, the source changes had not yet been committed, pushed or
+deployed.
+
+### QA corrections and shared attendee link
+
+The attendee link can now carry the event's shared invitation in its URL
+fragment (`#invite=...`). The browser strips the fragment immediately, keeps the
+invitation in session storage through Google sign-in, and submits it only to
+that event's join endpoint. This link grants event entry only: each signed-in
+account still receives its own card and two independent single-use gameplay
+codes. Existing single-use invitations remain supported.
+
+Player pages now poll while a visible event is waiting or open, so attendees
+see the round start without a manual refresh. The device countdown remains
+informational and no longer disables claims; the database remains authoritative
+for claim deadlines. Refresh on the Host tab also fetches protected host
+standings, and host control availability follows that fresh host state rather
+than a potentially cached public board.
+
+Browser regressions cover the shared link through sign-in, automatic waiting
+state updates, a device clock 30 minutes ahead, and refreshed host standings.
+The new invitation column and index are additive. Apply migration 0002 to the
+database used by the deployment before releasing this code; production
+migration has not been run by this change. Verification for this revision:
+unit/integration tests 42 passed; Playwright 24 cases passed; Astro checking,
+production build and Vercel artifact verification passed. Hosted sign-in,
+production migration and live event rehearsal remain separate release checks.

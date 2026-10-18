@@ -49,6 +49,7 @@ remaining database fault cases, or the 350-player path.
 | ID | PRD-F# | Case | Steps | Expected |
 |----|--------|------|-------|----------|
 | H-01 | PRD-F1 | Join with valid invitation | Sign in, submit invitation | One participation, 24-square card, code allowance issued |
+| H-14 | PRD-F1 | Join from the shared attendee link | Open link, sign in, enter display name, join | Fragment is removed before requests; no separate invitation entry; every account gets its own card and two codes |
 | H-02 | PRD-F2 | Card stable across devices | Join, sign in on second browser | Identical layout |
 | H-03 | PRD-F3 | View and copy own codes | Open player page | All own codes shown with spent state; copy works |
 | H-04 | PRD-F4 | Valid redemption | B submits A's code for an open square | 201; one claim; A's code spent |
@@ -61,6 +62,9 @@ remaining database fault cases, or the 350-player path.
 | H-11 | PRD-F11 | Export | Host downloads CSV | File opens; consented rows only in follow-up columns |
 | H-12 | PRD-F12 | Normal use under limit | Ten claims over two minutes | None rate limited |
 | H-13 | PRD-F13 | Phone layout | 360 px viewport | Card readable, targets ≥ 44 px, no horizontal scroll |
+| H-15 | PRD-F6 | Waiting-player round start | Keep event open in a visible player tab while host starts | Round status updates without manual refresh |
+| H-16 | PRD-F4 | Device clock ahead | Advance browser clock beyond displayed deadline while server reports open | Claim remains available; server decides acceptance |
+| H-17 | PRD-F8 | Refresh host standings | Change standings, press Refresh on Host tab | Latest protected standings appear |
 
 ## 3. Sad path cases
 
@@ -126,7 +130,7 @@ selected pooled driver. Distinct request IDs must not be serialised globally.
 |----|-------|---------------------------|----------|
 | NT-01 | INV-1 | 50 parallel redemptions of one code | Exactly one claim row for the code |
 | NT-02 | INV-2 | Force rejection at each validation step and a mid-transaction error | Code `redeemed_claim_id` stays null |
-| NT-03 | INV-3 | Scan board, error responses, and captured logs for code and invitation plaintext | No matches |
+| NT-03 | INV-3 | Scan board, error responses, server-visible URLs, and captured logs for code and invitation plaintext | No matches; attendee link fragment is stripped before requests |
 | NT-04 | INV-4 | Send forged user ID, host flag, score, and timestamp fields | All ignored; server values used |
 | NT-05 | INV-5 | Concurrent and repeated joins by one user | One participation, one card, fixed code count |
 | NT-06 | INV-6 | Player session hits every host route and another player's state | All 403 / not found |

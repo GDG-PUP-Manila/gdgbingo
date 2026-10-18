@@ -21,8 +21,8 @@ function state() {
     codes:[{ordinal:1,token:'A'.repeat(32),spent:false},{ordinal:2,token:'B'.repeat(32),spent:false}],
     progress:{claimedCount:0,lineCount:0,blackout:false}};
 }
-async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refreshFails?:boolean;host?:boolean;status?:string;closesAt?:string|null;realLabels?:boolean;signedOut?:boolean}={}) {
-  let joined=options.joined??true;let attempts=0;const requests: {squareKey:string;code:string;requestId:string}[]=[];
+async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refreshFails?:boolean;host?:boolean;status?:string;closesAt?:string|null;realLabels?:boolean;signedOut?:boolean;linkedInvitation?:string}={}) {
+  let joined=options.joined??true;let attempts=0;const requests: {squareKey:string;code:string;requestId:string}[]=[],joinRequests:Record<string,string>[]=[];
   const own=state();
   let sessionUser:string|null=options.signedOut?null:'synthetic-user';
   if(options.realLabels) {
@@ -46,7 +46,7 @@ async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refr
     if(path==='/api/auth/sign-in/social')return send({code:'INVALID_CALLBACKURL',message:'Invalid callback URL'},403);
     if(path.endsWith('/board')){boardReads++;return send({event:{title:'Synthetic event',status:round,closesAt},players:[],page:1,total:0});}
     if(path.endsWith('/me'))return sessionUser!=='synthetic-user'||(options.refreshFails&&attempts)?send({code:'unavailable'},503):joined?send(own):send({code:'participation_required'},403);
-    if(path.endsWith('/join')){joined=true;return send({participationId:'synthetic-player',created:true},201);}
+    if(path.endsWith('/join')){joinRequests.push(route.request().postDataJSON());joined=true;return send({participationId:'synthetic-player',created:true},201);}
     if(path.endsWith('/claims')){
       requests.push(route.request().postDataJSON());attempts++;
       if(options.unknown&&attempts===1)return send({code:'claim_outcome_unconfirmed'},503);
@@ -62,9 +62,9 @@ async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refr
     if(path.endsWith('/profile'))return send({recruitmentConsent:false,skills:[]});
     return route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Test event</title></head><body><div id="root"></div></body></html>'});
   });
-  async function load(){await page.goto(`https://bingo.test/events/${eventId}`);await page.addStyleTag({content:css});await page.addScriptTag({content:bundle});}
+  async function load(){await page.goto(`https://bingo.test/events/${eventId}${options.linkedInvitation?`#invite=${encodeURIComponent(options.linkedInvitation)}`:''}`);await page.addStyleTag({content:css});await page.addScriptTag({content:bundle});}
   await load();
-  return {requests,load,get boardReads(){return boardReads;},setRound:(value:string)=>{round=value;},setSession:(value:string|null)=>{sessionUser=value;}};
+  return {requests,joinRequests,load,get boardReads(){return boardReads;},setRound:(value:string)=>{round=value;},setSession:(value:string|null)=>{sessionUser=value;}};
 }
 
 async function setVisibility(page:Page,visibility:'hidden'|'visible') {
@@ -264,7 +264,7 @@ test('My card suspends polling while hidden and catches up when visible',async({
 });
 
 for(const view of ['My card','Board'] as const) {
-  test(`an idle waiting ${view} stops polling and resumes after activity`,async({page})=>{
+  test(`an idle waiting ${view} notices the round starting without activity`,async({page})=>{
     await page.clock.install({time:serverNow});
     const app=await mount(page,{status:'draft',closesAt:serverDeadline});
     await expect(page.getByText('Waiting for the host',{exact:true})).toBeVisible();
@@ -272,19 +272,30 @@ for(const view of ['My card','Board'] as const) {
     const initial=app.boardReads;
     await page.clock.fastForward(40_000);
     await expect.poll(()=>app.boardReads).toBeGreaterThan(initial);
-    // Leave an unattended pre-event screen long enough to exceed the bounded idle window.
+    // Stay visible and idle beyond the former inactivity cutoff.
     await page.clock.fastForward(12*60_000);
     const idle=app.boardReads;
-    await page.clock.fastForward(2*60_000);
-    expect(app.boardReads).toBe(idle);
+    expect(idle).toBeGreaterThan(initial);
     app.setRound('open');
-    await page.getByRole('heading',{name:view==='Board'?'Meet the room':'Give a code',exact:true}).click();
     await page.clock.fastForward(40_000);
     await expect(page.getByText('Round open',{exact:true})).toBeVisible();
     expect(app.boardReads).toBeGreaterThan(idle);
     await expect(page.getByRole('button',{name:view,exact:true})).toHaveAttribute('aria-pressed','true');
   });
 }
+
+test('one shared event link carries admission through sign-in and joins with its invitation',async({page})=>{
+  const app=await mount(page,{joined:false,linkedInvitation:'shared-development-invitation'});
+  await expect(page.getByLabel('Private invitation',{exact:true})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Your invitation'})).toBeVisible();
+  expect(await page.evaluate(()=>location.hash)).toBe('');
+  expect(await page.evaluate(()=>sessionStorage.getItem('gdgbingo:invitation:11111111-1111-4111-8111-111111111111'))).toBe('shared-development-invitation');
+  await page.getByLabel('Display name',{exact:true}).fill('Synthetic player');
+  await page.getByRole('button',{name:'Join event',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Give a code'})).toBeVisible();
+  expect(app.joinRequests).toEqual([{displayName:'Synthetic player',invitation:'shared-development-invitation'}]);
+  expect(await page.evaluate(()=>sessionStorage.getItem('gdgbingo:invitation:11111111-1111-4111-8111-111111111111'))).toBeNull();
+});
 
 test('returning visible during an aborted poll immediately recovers the latest round',async({page})=>{
   await page.clock.install({time:serverNow});

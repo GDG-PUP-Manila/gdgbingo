@@ -84,8 +84,11 @@ npm.cmd run seed -- --development-only --host-user-id=YOUR_VALIDATED_AUTH_USER_I
 ```
 
 These commands change your configured development database. Seeding creates
-a new synthetic event, provisional 24-square set, host assignment and 350
-invitations in a private ignored `.private/` manifest. It does not create real
+a new synthetic event, provisional 24-square set, host assignment and one
+shared event invitation in a private ignored `.private/` manifest. Everyone
+can use that invitation with their own Google account; each receives their
+own card and two single-use gameplay codes. Add `--individual-invitations`
+to seed to retain the older 350 single-use invitation mode. It does not create real
 attendees or delete data. A `prepared` manifest is not evidence of a committed
 seed; inspect the event before distributing it. Event creation and reviewed
 production migrations are separate release steps. Event-data retention is
@@ -93,6 +96,31 @@ production migrations are separate release steps. Event-data retention is
 run `npm.cmd run retention -- --event-id=EVENT_UUID` for an eligibility dry run;
 add `--apply` only after reviewing that event. It rejects rounds that ended
 fewer than 30 days ago. No automatic scheduled purge is deployed.
+
+For an existing draft/open development event, create a shared invitation after
+applying migration `0002_shared_event_invitation.sql`:
+
+```powershell
+node --env-file-if-exists=.env scripts/shared-invitation.mjs --development-only --event-id=EVENT_UUID
+```
+
+The shared invitation is saved in `.private/shared-invitation-EVENT_UUID.json`,
+not printed or placed in a public response. To make one attendee link, append
+the value as a fragment to the event URL:
+`https://gdgbingo.vercel.app/events/EVENT_UUID#invite=SHARED_INVITATION`.
+The browser removes the fragment immediately and keeps it through sign-in; URL
+fragments are not sent to the server. Treat the full link as the event's access
+link and share it only with attendees. Existing individual invitations remain
+valid; a shared invitation does not grant host access or affect the two
+single-use gameplay codes. Expired invitations and closed rounds reject new
+joins. Deploy the updated server and apply migration 0002 before distributing
+the shared invitation; older servers understand only single-use redemption.
+For a live event, first apply the reviewed migration to the production database,
+then configure `DATABASE_URL` and `DATABASE_ENVIRONMENT=production` for that
+database and run the same helper with `--production` instead of
+`--development-only`. This writes a private local manifest; keep it out of Git
+and share its invitation only with attendees. The helper will not create events
+or host assignments; provision and verify those separately.
 
 ## Deployment
 

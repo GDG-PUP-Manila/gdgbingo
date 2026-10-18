@@ -15,6 +15,13 @@
       "when": 1792261825699,
       "tag": "0001_zippy_sister_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792295382079,
+      "tag": "0002_shared_event_invitation",
+      "breakpoints": true
     }
   ]
 }

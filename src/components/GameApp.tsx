@@ -11,7 +11,6 @@ type PendingClaim = { userId: string; squareKey: string; code: string; requestId
 type HostState = { event?: Board['event']; players: (Player & { participationId: string; firstLineAt: string | null })[]; firstLineWinners: string[]; tiePolicy: string };
 type Reveal = { description: string; skills: { skillKey: string; label: string; peerConfirmedCount: number; selfSelectedCount: number }[] };
 const roundOrder: Record<string,number> = {draft:0,open:1,closed:2};
-const draftIdleLimit = 10*60_000;
 
 class ApiError extends Error {
   status: number;
@@ -60,6 +59,7 @@ function describeSignIn(error: unknown) {
 export default function GameApp({ eventId }: { eventId: string }) {
   const base = `/api/events/${eventId}`;
   const storageKey = `gdgbingo:pending:${eventId}`;
+  const invitationStorageKey = `gdgbingo:invitation:${eventId}`;
   const [userId,setUserId] = useState<string | null>(null);
   const [own,setOwn] = useState<OwnState | null>(null);
   const [ownLoaded,setOwnLoaded] = useState(false);
@@ -69,6 +69,7 @@ export default function GameApp({ eventId }: { eventId: string }) {
   const [tab,setTab] = useState<'card'|'board'|'host'>('card');
   const [page,setPage] = useState(1);
   const [name,setName] = useState(''); const [invitation,setInvitation] = useState('');
+  const [linkedInvitation,setLinkedInvitation] = useState<string | null>(null);
   const [selected,setSelected] = useState<Cell | null>(null); const [code,setCode] = useState('');
   const [pending,setPending] = useState<PendingClaim | null>(null);
   const [consent,setConsent] = useState(false); const [skills,setSkills] = useState<string[]>([]);
@@ -82,12 +83,11 @@ export default function GameApp({ eventId }: { eventId: string }) {
   const boardRequest = useRef<AbortController | null>(null);
   const boardLoad = useRef<{url:string;promise:Promise<Board>} | null>(null);
   const roundState = useRef<{eventId:string;event:Board['event'];authoritative:boolean} | null>(null);
-  const lastActivity = useRef(0);
   const identity = useRef<string | null>(null);
   const client = () => createAuthClient(new URL('/api/auth',location.origin).href);
   function clearPrivateViews() {
     setOwn(null);setOwnLoaded(false);setHost(null);setReveal(null);setPending(null);
-    setSelected(null);setCode('');setName('');setInvitation('');setConsent(false);setSkills([]);
+    setSelected(null);setCode('');setName('');setConsent(false);setSkills([]);
     setHostDenied(false);setConfirmClose(false);
     if(roundState.current)roundState.current.authoritative=false;
   }
@@ -159,6 +159,17 @@ export default function GameApp({ eventId }: { eventId: string }) {
     finally { setBusy(false); setLoaded(true); }
   }
   useEffect(() => { void refresh(); },[eventId]);
+  useEffect(() => {
+    let linked: string | null = null;
+    try {
+      const params=new URLSearchParams(location.hash.slice(1));
+      linked=params.get('invite');
+      if(linked)sessionStorage.setItem(invitationStorageKey,linked);
+      else linked=sessionStorage.getItem(invitationStorageKey);
+      if(location.hash.includes('invite='))history.replaceState(history.state,'',`${location.pathname}${location.search}`);
+    } catch { /* Manual invitation entry remains available if storage is disabled. */ }
+    if(linked){setLinkedInvitation(linked);setInvitation(linked);}
+  },[eventId]);
   useEffect(() => { if (selected) codeInput.current?.focus(); },[selected]);
   useEffect(() => {
     setClock(Date.now());
@@ -169,17 +180,14 @@ export default function GameApp({ eventId }: { eventId: string }) {
     if (tab === 'host') return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false, running = false, resumeRequested = false, failures = 0;
-    if(!lastActivity.current)lastActivity.current=performance.now();
     const status = () => roundState.current?.eventId===eventId?roundState.current.event.status:null;
-    const inactive = () => status()!=='open' && performance.now()-lastActivity.current>=draftIdleLimit;
     function schedule(delay:number) {
-      if(stopped || document.visibilityState!=='visible' || status()==='closed' || inactive() || failures>=5)return;
-      const remaining=status()==='open'?delay:Math.max(0,draftIdleLimit-(performance.now()-lastActivity.current));
-      timer=setTimeout(poll,Math.min(delay,remaining));
+      if(stopped || document.visibilityState!=='visible' || status()==='closed' || failures>=5)return;
+      timer=setTimeout(poll,delay);
     }
     async function poll() {
       clearTimeout(timer);
-      if (stopped || running || document.visibilityState !== 'visible' || status()==='closed' || inactive() || failures>=5) return;
+      if (stopped || running || document.visibilityState !== 'visible' || status()==='closed' || failures>=5) return;
       running = true;
       try {
         await loadBoard(); failures = 0;
@@ -191,21 +199,15 @@ export default function GameApp({ eventId }: { eventId: string }) {
         else schedule(failures?Math.min(120_000,30_000*2**failures*(0.9+Math.random()*0.2)):27_000+Math.random()*6_000);
       }
     }
-    function activity() {
-      const resume=inactive() || failures>=5;
-      lastActivity.current=performance.now();
-      if(resume){failures=0;void poll();}
-    }
     function visible() {
       if (document.visibilityState === 'visible') {
-        lastActivity.current=performance.now();failures=0;
+        failures=0;
         if(running)resumeRequested=true;else void poll();
       }
       else {clearTimeout(timer);boardRequest.current?.abort();}
     }
     void poll(); document.addEventListener('visibilitychange',visible);
-    document.addEventListener('pointerdown',activity);document.addEventListener('keydown',activity);
-    return ()=>{stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);document.removeEventListener('pointerdown',activity);document.removeEventListener('keydown',activity);};
+    return ()=>{stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);};
   },[tab,loadBoard,eventId]);
   useEffect(()=>()=>{boardRequest.current?.abort();},[eventId]);
   async function signIn() {
@@ -233,6 +235,7 @@ export default function GameApp({ eventId }: { eventId: string }) {
     event.preventDefault(); setBusy(true);
     try {
       await api(`${base}/join`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName:name,invitation})});
+      sessionStorage.removeItem(invitationStorageKey);setLinkedInvitation(null);
       setInvitation(''); await loadOwn(); setMessage('You’re in. Your card and two codes are ready.');
     } catch(error) {setMessage(describe(error));} finally {setBusy(false);}
   }
@@ -335,10 +338,10 @@ export default function GameApp({ eventId }: { eventId: string }) {
       <p role="status" className="notice"><Icon name="info"/><span>{message}</span></p>
       {!loaded&&<div className="panel loading-panel" aria-busy="true"><div className="skeleton skeleton-heading"/><div className="skeleton skeleton-card"/><p>Getting your event ready…</p></div>}
       {loaded&&!board&&<section className="panel empty-state"><Icon name="info"/><h2>Let’s find your event</h2><p>Check your connection and the event link shared by your organiser.</p><button className="primary" disabled={busy} onClick={()=>void refresh()}>Try again</button><a href="/">Back to GDG Bingo</a></section>}
-      {loaded&&board&&!userId&&<section className="panel join-panel"><div className="icon-chip blue"><Icon name="people"/></div><p className="eyebrow">Your next conversation starts here</p><h2>Join the room</h2><p>Sign in with Google, then enter the private invitation from your organiser. Your card and two codes will be waiting.</p><button className="primary" disabled={busy} onClick={()=>void signIn()}>Sign in with Google <Icon name="arrow"/></button></section>}
+      {loaded&&board&&!userId&&<section className="panel join-panel"><div className="icon-chip blue"><Icon name="people"/></div><p className="eyebrow">Your next conversation starts here</p><h2>Join the room</h2><p>{linkedInvitation?'This event link includes your private invitation. Sign in with Google and your card will be ready.':'Sign in with Google, then enter the private invitation from your organiser. Your card and two codes will be waiting.'}</p><button className="primary" disabled={busy} onClick={()=>void signIn()}>Sign in with Google <Icon name="arrow"/></button></section>}
       {userId&&ownLoaded&&!own&&<form className="panel join-panel" onSubmit={join}><p className="eyebrow">You’re one step away</p><h2>Your invitation</h2><p className="muted">Use the private invitation your organiser sent you. This is different from a player’s outgoing code.</p>
         <label htmlFor="name">Display name</label><input id="name" type="text" placeholder="What should we call you?" maxLength={80} required value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname"/>
-        <label htmlFor="invitation">Private invitation</label><input id="invitation" type="text" maxLength={80} required value={invitation} onChange={e=>setInvitation(e.target.value)} autoComplete="off" spellCheck={false}/>
+        {!linkedInvitation&&<><label htmlFor="invitation">Private invitation</label><input id="invitation" type="text" maxLength={80} required value={invitation} onChange={e=>setInvitation(e.target.value)} autoComplete="off" spellCheck={false}/></>}
         <p className="muted">Your name and progress appear on the public board. Event records are retained for 30 days. Recruitment follow-up is optional.</p><button className="primary" disabled={busy}>Join event <Icon name="arrow"/></button>
       </form>}
       {userId&&!ownLoaded&&loaded&&<section className="panel empty-state"><h2>We couldn’t load your saved card</h2><p>Refresh to try again. You don’t need a new invitation or new codes.</p><button disabled={busy} onClick={()=>void refresh()}>Retry saved card</button></section>}

@@ -74,7 +74,7 @@ gates. Owner confirmation pending (LOG Q1).
 |----|------------------------|-----|--------|
 | INV-1 | Commit more than one claim against a single code | A double-spent code corrupts scoring and fairness | Active |
 | INV-2 | Mark a code spent when its claim is rejected or rolled back | Players would lose codes to errors they did not cause | Active |
-| INV-3 | Expose a private code, invitation token, or server secret in a public board response, a URL, analytics, or a log line | Leaked codes can be redeemed by anyone; leaked secrets compromise the event | Active |
+| INV-3 | Expose a private code or server secret in a public response, server-visible URL, analytics, or log line; expose a shared invitation beyond its attendee link | Leaked codes can be redeemed by anyone; leaked secrets compromise the event | Active |
 | INV-4 | Accept identity, permissions, scores, or round timing from the browser | Browser input is untrusted; results must be authoritative | Active |
 | INV-5 | Create a second participation, card, or code allowance for the same user in the same event | Retries and rejoins must not mint extra codes | Active |
 | INV-6 | Let a non-host reach host controls or exports, or let any user read another participant's private state | Exports and codes are private data | Active |

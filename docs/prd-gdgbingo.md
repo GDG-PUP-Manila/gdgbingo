@@ -64,7 +64,8 @@ Priority vocabulary: `Must-Have`, `Should-Have`, `Could-Have`, `Dropped`.
 **PRD-F1 — Invitation join**
 - Given a signed-in user with an unredeemed invitation, when they join, then one participation, one card, and the configured code allowance exist for them.
 - Given a user who already joined, when they join again from any device or retry the request, then the same participation is returned and no extra codes exist.
-- Given an invitation already redeemed by another user, when a different user submits it, then the join is rejected.
+- Given a single-use invitation already redeemed by another user, when a different user submits it, then the join is rejected.
+- Given an active shared event invitation link, different signed-in accounts may join with the same invitation; each receives one separate participation, card and two gameplay codes. The invitation is carried in a URL fragment, removed from the address bar before requests, and retained through sign-in. A returning account receives its saved state without another issuance. Shared invitations never grant host access and cannot admit new accounts after expiry or round closure. Shared mode was authorised by the owner after the individual-invitation rehearsal.
 - Sign-in uses a production-configured OAuth provider with the organiser's own credentials; no attendee depends on Neon's shared development email sender or OAuth test-user access.
 - Many attendees behind one public IP can sign in and join without being throttled as one client.
 - Joining opens 15–30 minutes before the round; sessions persist through gameplay; a late join burst still succeeds.
@@ -98,7 +99,7 @@ Priority vocabulary: `Must-Have`, `Should-Have`, `Could-Have`, `Dropped`.
 
 **PRD-F7 — Public board**
 - Board data is at most 45 s stale under normal connectivity (GDGBINGO-M4).
-- Clients poll every 30 s with jitter, only while visible, without overlapping requests, and stop after final closure or pre-event inactivity.
+- Clients poll every 30 s with jitter, only while visible, without overlapping requests, and stop after final closure. Waiting players keep the event page open to receive the host's round start without manual refresh.
 - The board endpoint reads no cookies and is cacheable at the CDN.
 
 **PRD-F8 — Host dashboard**
@@ -140,7 +141,7 @@ Priority vocabulary: `Must-Have`, `Should-Have`, `Could-Have`, `Dropped`.
 |-------|------------------------|------------|
 | INV-1 | Commit more than one claim per code | PRD-F4 |
 | INV-2 | Leave a code spent after its claim is rejected or rolled back | PRD-F4, PRD-F12 |
-| INV-3 | Return or log a private code, invitation token, or server secret outside its owner's private response | PRD-F3, PRD-F7, PRD-F11 |
+| INV-3 | Return or log a private code or server secret outside its owner's private response; send the shared invitation fragment to the server or expose it outside the attendee link | PRD-F1, PRD-F3, PRD-F7, PRD-F11 |
 | INV-4 | Trust browser-supplied identity, permissions, scores, or timing | PRD-F4, PRD-F5, PRD-F6, PRD-F8 |
 | INV-5 | Create a second participation, card, or code allowance for one user in one event | PRD-F1, PRD-F2, PRD-F3 |
 | INV-6 | Serve host controls, exports, or another participant's private state to an unauthorised user | PRD-F3, PRD-F8, PRD-F11 |

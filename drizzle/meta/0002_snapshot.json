@@ -1,0 +1,1103 @@
+{
+  "id": "3ab54071-0f7f-4c27-90f0-25b663bb901d",
+  "prevId": "c4a8bdc6-21ee-479c-b1df-fe8e619b7ec1",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.card_cell": {
+      "name": "card_cell",
+      "schema": "",
+      "columns": {
+        "participation_id": {
+          "name": "participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "square_id": {
+          "name": "square_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "card_cell_participation_id_participation_id_fk": {
+          "name": "card_cell_participation_id_participation_id_fk",
+          "tableFrom": "card_cell",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "participation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "card_cell_square_id_square_id_fk": {
+          "name": "card_cell_square_id_square_id_fk",
+          "tableFrom": "card_cell",
+          "tableTo": "square",
+          "columnsFrom": [
+            "square_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "card_cell_participation_id_position_pk": {
+          "name": "card_cell_participation_id_position_pk",
+          "columns": [
+            "participation_id",
+            "position"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "card_square_unique": {
+          "name": "card_square_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "participation_id",
+            "square_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "card_position_valid": {
+          "name": "card_position_valid",
+          "value": "\"card_cell\".\"position\" between 0 and 24"
+        },
+        "card_free_center": {
+          "name": "card_free_center",
+          "value": "(\"card_cell\".\"position\" = 12) = (\"card_cell\".\"square_id\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.claim": {
+      "name": "claim",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "claimant_participation_id": {
+          "name": "claimant_participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmer_participation_id": {
+          "name": "confirmer_participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "square_id": {
+          "name": "square_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_id": {
+          "name": "code_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "claim_event_claimant_index": {
+          "name": "claim_event_claimant_index",
+          "columns": [
+            {
+              "expression": "event_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "claimant_participation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "claim_event_id_event_id_fk": {
+          "name": "claim_event_id_event_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "event",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "claim_square_id_square_id_fk": {
+          "name": "claim_square_id_square_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "square",
+          "columnsFrom": [
+            "square_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "claim_event_id_claimant_participation_id_participation_event_id_id_fk": {
+          "name": "claim_event_id_claimant_participation_id_participation_event_id_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "event_id",
+            "claimant_participation_id"
+          ],
+          "columnsTo": [
+            "event_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "claim_event_id_confirmer_participation_id_participation_event_id_id_fk": {
+          "name": "claim_event_id_confirmer_participation_id_participation_event_id_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "event_id",
+            "confirmer_participation_id"
+          ],
+          "columnsTo": [
+            "event_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "claim_event_id_confirmer_participation_id_code_id_code_event_id_owner_participation_id_id_fk": {
+          "name": "claim_event_id_confirmer_participation_id_code_id_code_event_id_owner_participation_id_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "code",
+          "columnsFrom": [
+            "event_id",
+            "confirmer_participation_id",
+            "code_id"
+          ],
+          "columnsTo": [
+            "event_id",
+            "owner_participation_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "claim_claimant_participation_id_square_id_card_cell_participation_id_square_id_fk": {
+          "name": "claim_claimant_participation_id_square_id_card_cell_participation_id_square_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "card_cell",
+          "columnsFrom": [
+            "claimant_participation_id",
+            "square_id"
+          ],
+          "columnsTo": [
+            "participation_id",
+            "square_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "claim_code_unique": {
+          "name": "claim_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code_id"
+          ]
+        },
+        "claim_square_unique": {
+          "name": "claim_square_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "claimant_participation_id",
+            "square_id"
+          ]
+        },
+        "claim_request_unique": {
+          "name": "claim_request_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "claimant_participation_id",
+            "request_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "claim_no_self": {
+          "name": "claim_no_self",
+          "value": "\"claim\".\"claimant_participation_id\" <> \"claim\".\"confirmer_participation_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.code": {
+      "name": "code",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_participation_id": {
+          "name": "owner_participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_digest": {
+          "name": "token_digest",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_ciphertext": {
+          "name": "token_ciphertext",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ordinal": {
+          "name": "ordinal",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redeemed_claim_id": {
+          "name": "redeemed_claim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "code_event_id_event_id_fk": {
+          "name": "code_event_id_event_id_fk",
+          "tableFrom": "code",
+          "tableTo": "event",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "code_redeemed_claim_id_claim_id_fk": {
+          "name": "code_redeemed_claim_id_claim_id_fk",
+          "tableFrom": "code",
+          "tableTo": "claim",
+          "columnsFrom": [
+            "redeemed_claim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "code_event_id_owner_participation_id_participation_event_id_id_fk": {
+          "name": "code_event_id_owner_participation_id_participation_event_id_id_fk",
+          "tableFrom": "code",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "event_id",
+            "owner_participation_id"
+          ],
+          "columnsTo": [
+            "event_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "code_token_digest_unique": {
+          "name": "code_token_digest_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token_digest"
+          ]
+        },
+        "code_owner_ordinal_unique": {
+          "name": "code_owner_ordinal_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "owner_participation_id",
+            "ordinal"
+          ]
+        },
+        "code_event_owner_unique": {
+          "name": "code_event_owner_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "owner_participation_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "code_ordinal_valid": {
+          "name": "code_ordinal_valid",
+          "value": "\"code\".\"ordinal\" between 1 and 24"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.event_host": {
+      "name": "event_host",
+      "schema": "",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_user_id": {
+          "name": "auth_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "event_host_event_id_event_id_fk": {
+          "name": "event_host_event_id_event_id_fk",
+          "tableFrom": "event_host",
+          "tableTo": "event",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "event_host_event_id_auth_user_id_pk": {
+          "name": "event_host_event_id_auth_user_id_pk",
+          "columns": [
+            "event_id",
+            "auth_user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.event": {
+      "name": "event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "opens_at": {
+          "name": "opens_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closes_at": {
+          "name": "closes_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rules_version": {
+          "name": "rules_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "card_version": {
+          "name": "card_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_allowance": {
+          "name": "code_allowance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "event_slug_unique": {
+          "name": "event_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "event_status_valid": {
+          "name": "event_status_valid",
+          "value": "\"event\".\"status\" in ('draft','open','closed')"
+        },
+        "event_allowance_valid": {
+          "name": "event_allowance_valid",
+          "value": "\"event\".\"code_allowance\" between 1 and 24"
+        },
+        "event_window_valid": {
+          "name": "event_window_valid",
+          "value": "\"event\".\"closes_at\" is null or \"event\".\"opens_at\" is null or \"event\".\"closes_at\" > \"event\".\"opens_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.host_audit_event": {
+      "name": "host_audit_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_auth_user_id": {
+          "name": "actor_auth_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "host_audit_event_event_id_event_id_fk": {
+          "name": "host_audit_event_event_id_event_id_fk",
+          "tableFrom": "host_audit_event",
+          "tableTo": "event",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.invitation": {
+      "name": "invitation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_digest": {
+          "name": "token_digest",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reusable": {
+          "name": "reusable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "participation_id": {
+          "name": "participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "invitation_participation_unique": {
+          "name": "invitation_participation_unique",
+          "columns": [
+            {
+              "expression": "participation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"invitation\".\"participation_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitation_shared_event_unique": {
+          "name": "invitation_shared_event_unique",
+          "columns": [
+            {
+              "expression": "event_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"invitation\".\"reusable\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "invitation_event_id_event_id_fk": {
+          "name": "invitation_event_id_event_id_fk",
+          "tableFrom": "invitation",
+          "tableTo": "event",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "invitation_event_id_participation_id_participation_event_id_id_fk": {
+          "name": "invitation_event_id_participation_id_participation_event_id_id_fk",
+          "tableFrom": "invitation",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "event_id",
+            "participation_id"
+          ],
+          "columnsTo": [
+            "event_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "invitation_token_digest_unique": {
+          "name": "invitation_token_digest_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token_digest"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "invitation_shared_not_redeemed": {
+          "name": "invitation_shared_not_redeemed",
+          "value": "not \"invitation\".\"reusable\" or \"invitation\".\"participation_id\" is null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.participation": {
+      "name": "participation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_user_id": {
+          "name": "auth_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recruitment_consent": {
+          "name": "recruitment_consent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consent_at": {
+          "name": "consent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participation_event_id_event_id_fk": {
+          "name": "participation_event_id_event_id_fk",
+          "tableFrom": "participation",
+          "tableTo": "event",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "participation_user_event_unique": {
+          "name": "participation_user_event_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "auth_user_id"
+          ]
+        },
+        "participation_event_id_unique": {
+          "name": "participation_event_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "participation_name_valid": {
+          "name": "participation_name_valid",
+          "value": "length(\"participation\".\"display_name\") between 1 and 80"
+        },
+        "participation_consent_valid": {
+          "name": "participation_consent_valid",
+          "value": "\"participation\".\"recruitment_consent\" = (\"participation\".\"consent_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.rate_limit_bucket": {
+      "name": "rate_limit_bucket",
+      "schema": "",
+      "columns": {
+        "participation_id": {
+          "name": "participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket_key": {
+          "name": "bucket_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tokens": {
+          "name": "tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refilled_at": {
+          "name": "refilled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "rate_expiry_index": {
+          "name": "rate_expiry_index",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "rate_limit_bucket_participation_id_participation_id_fk": {
+          "name": "rate_limit_bucket_participation_id_participation_id_fk",
+          "tableFrom": "rate_limit_bucket",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "participation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "rate_limit_bucket_participation_id_bucket_key_pk": {
+          "name": "rate_limit_bucket_participation_id_bucket_key_pk",
+          "columns": [
+            "participation_id",
+            "bucket_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "rate_tokens_nonnegative": {
+          "name": "rate_tokens_nonnegative",
+          "value": "\"rate_limit_bucket\".\"tokens\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.skill_selection": {
+      "name": "skill_selection",
+      "schema": "",
+      "columns": {
+        "participation_id": {
+          "name": "participation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_key": {
+          "name": "skill_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "skill_selection_participation_id_participation_id_fk": {
+          "name": "skill_selection_participation_id_participation_id_fk",
+          "tableFrom": "skill_selection",
+          "tableTo": "participation",
+          "columnsFrom": [
+            "participation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "skill_selection_participation_id_skill_key_pk": {
+          "name": "skill_selection_participation_id_skill_key_pk",
+          "columns": [
+            "participation_id",
+            "skill_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.square": {
+      "name": "square",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "card_version": {
+          "name": "card_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "square_key": {
+          "name": "square_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skill_key": {
+          "name": "skill_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "square_version_key_unique": {
+          "name": "square_version_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "card_version",
+            "square_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

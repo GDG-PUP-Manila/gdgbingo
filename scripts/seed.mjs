@@ -14,7 +14,8 @@ if (!host || host.length > 200) throw new Error('Provide --host-user-id with the
 const keys = tokenKeys();
 const eventId = randomUUID();
 const cardVersion = `rehearsal-${eventId}`;
-const invitations = Array.from({ length: 350 }, () => newToken());
+const shared = !process.argv.includes('--individual-invitations');
+const invitations = Array.from({ length: shared ? 1 : 350 }, () => newToken());
 const labels = [
   ['sql', 'Has written SQL', 'skill', 'sql'], ['figma', 'Has used Figma', 'skill', 'figma'],
   ['azure', 'Has used Azure', 'skill', 'azure'], ['flutter', 'Has built with Flutter', 'skill', 'flutter'],
@@ -33,7 +34,7 @@ await mkdir('.private', { recursive: true });
 const manifest = `.private/rehearsal-${eventId}.json`;
 // Save private invitations before the transaction so a local write failure
 // cannot commit invitations whose plaintext was lost. Never log the tokens.
-await writeFile(manifest, JSON.stringify({ state: 'prepared', eventId, invitations }, null, 2), { flag: 'wx', mode: 0o600 });
+await writeFile(manifest, JSON.stringify({ state: 'prepared', eventId, shared, invitations }, null, 2), { flag: 'wx', mode: 0o600 });
 neonConfig.webSocketConstructor = ws;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
 try {
@@ -41,9 +42,9 @@ try {
     await tx.execute(sql`INSERT INTO event (id,slug,title,rules_version,card_version,code_allowance) VALUES (${eventId},${`rehearsal-${eventId}`},'GDG Bingo rehearsal',1,${cardVersion},2)`);
     await tx.execute(sql`INSERT INTO event_host (event_id,auth_user_id) VALUES (${eventId},${host})`);
     await tx.execute(sql`INSERT INTO square (card_version,square_key,label,category,skill_key) VALUES ${sql.join(labels.map(([key,label,category,skill]) => sql`(${cardVersion},${key},${label},${category},${skill})`), sql`, `)}`);
-    await tx.execute(sql`INSERT INTO invitation (event_id,token_digest) VALUES ${sql.join(invitations.map(token => sql`(${eventId},${tokenDigest(keys, 'invitation', token)})`), sql`, `)}`);
+    await tx.execute(sql`INSERT INTO invitation (event_id,token_digest,reusable) VALUES ${sql.join(invitations.map(token => sql`(${eventId},${tokenDigest(keys, 'invitation', token)},${shared})`), sql`, `)}`);
   });
-  await writeFile(manifest, JSON.stringify({ state: 'created', eventId, invitations }, null, 2), { mode: 0o600 });
+  await writeFile(manifest, JSON.stringify({ state: 'created', eventId, shared, invitations }, null, 2), { mode: 0o600 });
   console.log(`Created synthetic event ${eventId}. Private invitations saved in ${manifest}; do not share or commit that file.`);
 } catch {
   console.error('Seed outcome requires inspection. Private manifest remains prepared; do not distribute invitations until the event is confirmed in the database.');

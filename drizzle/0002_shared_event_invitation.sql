@@ -1,0 +1,3 @@
+ALTER TABLE "invitation" ADD COLUMN "reusable" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "invitation_shared_event_unique" ON "invitation" USING btree ("event_id") WHERE "invitation"."reusable";--> statement-breakpoint
+ALTER TABLE "invitation" ADD CONSTRAINT "invitation_shared_not_redeemed" CHECK (not "invitation"."reusable" or "invitation"."participation_id" is null);

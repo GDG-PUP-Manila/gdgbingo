@@ -110,7 +110,8 @@ erDiagram
         uuid id PK
         uuid event_id FK
         bytea token_digest UK
-        uuid participation_id FK "nullable; set on redeem"
+        boolean reusable "shared event access; default false"
+        uuid participation_id FK "nullable; set only for single-use redemption"
         timestamptz expires_at "nullable"
         timestamptz created_at
     }
@@ -185,7 +186,7 @@ erDiagram
 |--------|--------|----------------|------------|-----------|-------|
 | event | PRD-F6 | INV-4 | internal | 30 days after round end | One active round per event |
 | event_host | PRD-F8 | INV-6 | internal | Event lifetime | Host authority is server-side only |
-| invitation | PRD-F1 | INV-3, INV-5 | secret | Until event retention ends | Only the digest is stored |
+| invitation | PRD-F1 | INV-3, INV-5 | secret | Until event retention ends | Only the digest is stored; shared link fragment is stripped and retained in session storage through OAuth |
 | participation | PRD-F1, PRD-F10 | INV-5 | PII | 30 days after round end | Display name is not identity |
 | square | PRD-F2, PRD-F9 | — | public | Indefinite | Versioned by `card_version` |
 | card_cell | PRD-F2 | INV-5 | internal | Event retention | Persisted layout |
@@ -200,7 +201,8 @@ erDiagram
 | Constraint | On | Why | Enforces |
 |------------|----|-----|----------|
 | UNIQUE (event_id, auth_user_id) | participation | One participation per user per event | INV-5 |
-| UNIQUE (participation_id) WHERE NOT NULL | invitation | One invitation per participation | INV-5 |
+| UNIQUE (participation_id) WHERE NOT NULL | invitation | One single-use invitation per participation | INV-5 |
+| UNIQUE (event_id) WHERE reusable | invitation | At most one reusable invitation link per event | PRD-F1 |
 | UNIQUE (participation_id, square_id) | card_cell | No repeated square on a card | PRD-F2 |
 | CHECK (position = 12) = (square_id IS NULL) | card_cell | Only the centre is free | PRD-F2 |
 | UNIQUE (event_id, owner_participation_id, ordinal) | code | Fixed allowance, no extra codes | INV-5 |
@@ -264,7 +266,7 @@ Implementation is in progress. See `docs/development-status.md` for executable e
 |-------|-------------|----------|-----|
 | INV-1 | Claim transaction + unique index | `src/server/game/claim.ts` | `SELECT ... FOR UPDATE` on code row; `UNIQUE (code_id)` on claim |
 | INV-2 | Claim transaction | `src/server/game/claim.ts` | Claim insert and code update in one transaction; any rejection rolls back both |
-| INV-3 | Response serializers, log redaction, crypto module | `src/server/http/`, `src/server/crypto/` | Board DTO has no code fields; logger redacts tokens; code lookup uses keyed digests, redisplay uses ciphertext; invitations use digests; no plaintext tokens stored |
+| INV-3 | Response serializers, log redaction, crypto module and event client | `src/server/http/`, `src/server/crypto/`, `src/components/GameApp.tsx` | Board DTO has no code fields; logger redacts tokens; code lookup uses keyed digests, redisplay uses ciphertext; invitations use digests; a shared invitation URL fragment is removed before requests and is never sent to server logs or referrers |
 | INV-4 | API routes and game module | `src/pages/api/`, `src/server/game/` | Identity from session; timing from fresh database clock at admission; scores computed server-side |
 | INV-5 | Join transaction + unique indexes | `src/server/game/join.ts` | `UNIQUE (event_id, auth_user_id)`; insert-or-return in one transaction |
 | INV-6 | Auth module guards | `src/server/auth/` | `requireParticipation` / `requireHost` on every private route |
