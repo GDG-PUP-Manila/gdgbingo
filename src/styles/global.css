@@ -40,6 +40,14 @@ h2:has(.icon), h3:has(.icon) { display: flex; align-items: center; gap: 10px; }
 .site-footer img { width: 225px; height: auto; max-width: 70%; }
 .site-footer p { margin: 0; font-size: .85rem; font-weight: 600; text-align: right; }
 .site-footer p span { color: var(--muted); font-weight: 400; }
+.footer-links { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.footer-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: .9rem; }
+.policy-main { max-width: 900px; padding-top: 40px; }
+.policy-copy h1 { text-transform: none; }
+.policy-copy h2 { margin-top: 32px; }
+.policy-copy ul { padding-left: 24px; margin-bottom: 24px; }
+.policy-copy li { line-height: 1.7; margin-bottom: 12px; }
+.policy-copy a { overflow-wrap: anywhere; }
 .event-main { padding-top: 48px; }
 .event-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 28px; }
 .event-heading > div:first-child { min-width: 0; }
@@ -236,13 +244,6 @@ meter { display: block; width: 100%; height: 10px; accent-color: var(--green); }
 }
 /* Motion follows frame.gdgpup.org: 12px entrances, 200ms hover easing,
    and four staggered 5.6–6.2s decorative bounces. */
-.motion-control { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0; border: 1px solid transparent; border-radius: 999px; cursor: pointer; color: var(--muted); flex-shrink: 0; }
-.motion-control:hover { background: #f0f4f8; }
-.motion-control:focus-within { outline: 3px solid var(--blue); outline-offset: 3px; }
-.motion-control:has(input:checked) { background: #e8f0fe; color: var(--blue); border-color: #c3d6f8; }
-.motion-play { display: none; }
-.motion-control:has(input:checked) .motion-pause { display: none; }
-.motion-control:has(input:checked) .motion-play { display: inline; }
 @keyframes bingo-fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bingo-bounce {
   0%, 100% { translate: 0 -25%; animation-timing-function: cubic-bezier(.8,0,1,1); }
@@ -278,6 +279,4 @@ meter { display: block; width: 100%; height: 10px; accent-color: var(--green); }
   .process-grid > .panel:hover { translate: 0 -4px; box-shadow: 0 18px 36px #11182714; }
   button:not(:disabled):active, .button:active { translate: 0 0; scale: .98; }
 }
-html:has([data-pause-motion]:checked), html:has([data-pause-motion]:checked) *, html:has([data-pause-motion]:checked) *::before, html:has([data-pause-motion]:checked) *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-html:has([data-pause-motion]:checked) .decorations::before { transform: none; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

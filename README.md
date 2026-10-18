@@ -15,8 +15,8 @@ The UI follows the owner-approved light GDG direction based on
 event link; player cards, private outgoing codes, board and host controls share
 the same responsive layout. Logo assets and the Outfit font are served locally.
 Reference-inspired animation includes floating shapes, fade-up entrances and
-hover effects. Use the pause icon in the header to stop motion; operating-system
-reduced-motion preferences are respected automatically.
+hover effects. Operating-system reduced-motion preferences are respected
+automatically.
 
 ## Local development
 

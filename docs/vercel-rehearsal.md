@@ -90,3 +90,25 @@ only the configured test accounts; it is not ready for 300 attendees.
    capacity or quota fit.
 
 Report the deployed URL and redacted outcomes to continue verification.
+
+## Before distributing the tester link
+
+- Publish the latest local recovery/privacy fixes and confirm Vercel builds
+  that source revision. The local audit evidence is in
+  [development-status.md](development-status.md#pre-tester-audit-after-successful-hosted-sign-in).
+- Use the trusted stable branch origin:
+  `https://gdgbingo-git-feat-8-phase1-spikes-gdgpupmnls-projects.vercel.app`.
+  The earlier per-deployment URL failed the Neon callback-origin check.
+- Add each tester's Google account to the OAuth Testing audience and confirm
+  they can access the preview without organiser-only Vercel protection.
+- Create a fresh development rehearsal with the existing validated test host;
+  event `28b13ac3-b8a8-45db-abfa-6f05914c8f8f` is closed. Follow the seed
+  instructions in README; never restart it by editing database status.
+- Share the new event URL plus a separate unused invitation per tester.
+  Keep the invitation manifest private. Start the round only after they join.
+- Recheck claim exchange, spent-code rejection, refresh, consent withdrawal,
+  host close/reveal/export, and ordinary-player host denial on the deployed
+  revision. Record results before expanding the tester group.
+
+These steps prepare controlled testing. Final host assignment, production
+audience access and hosted capacity/headroom checks still precede event launch.

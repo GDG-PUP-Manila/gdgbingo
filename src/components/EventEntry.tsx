@@ -10,8 +10,7 @@ export default function EventEntry() {
   useEffect(() => {
     function showEntry() {
       input.current?.focus({preventScroll:true});
-      const paused = document.querySelector<HTMLInputElement>('[data-pause-motion]')?.checked;
-      form.current?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches||paused?'auto':'smooth'});
+      form.current?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
     }
     function activate(event: MouseEvent) {
       if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey) return;

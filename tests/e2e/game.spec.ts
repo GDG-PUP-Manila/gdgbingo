@@ -18,9 +18,10 @@ function state() {
     codes:[{ordinal:1,token:'A'.repeat(32),spent:false},{ordinal:2,token:'B'.repeat(32),spent:false}],
     progress:{claimedCount:0,lineCount:0,blackout:false}};
 }
-async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refreshFails?:boolean;host?:boolean;status?:string;realLabels?:boolean}={}) {
+async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refreshFails?:boolean;host?:boolean;status?:string;realLabels?:boolean;signedOut?:boolean}={}) {
   let joined=options.joined??true;let attempts=0;const requests: {squareKey:string;code:string;requestId:string}[]=[];
   const own=state();
+  let sessionUser:string|null=options.signedOut?null:'synthetic-user';
   if(options.realLabels) {
     const labels=['Has written Python','Likes pancakes','Is learning a new language','Enjoys coffee','Has used spreadsheet formulas','Commutes to campus','Has finished a book this month','Has used Azure','Has pulled an all-nighter','Is at their first GDG event','Likes cooking','Has resolved a Git conflict','Has a pet','Has hosted an event','Plays an instrument','Has volunteered at an event','Has built with Flutter','Has managed a budget','Has designed a poster','Has written SQL','Has used Figma','Enjoys board games','Has published a website','Has edited a video'];
     let index=0;
@@ -35,9 +36,10 @@ async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refr
       const body=await readFile(`.vercel/output/static${path}`);
       return route.fulfill({body,contentType:path.endsWith('.png')?'image/png':path.endsWith('.svg')?'image/svg+xml':'font/woff2'});
     }
-    if(path==='/api/session')return send({authenticated:true,userId:'synthetic-user'});
+    if(path==='/api/session')return sessionUser?send({authenticated:true,userId:sessionUser}):send({error:'unauthenticated'},401);
+    if(path==='/api/auth/sign-in/social')return send({code:'INVALID_CALLBACKURL',message:'Invalid callback URL'},403);
     if(path.endsWith('/board'))return send({event:{title:'Synthetic event',status:round,closesAt:new Date(Date.now()+720000).toISOString()},players:[],page:1,total:0});
-    if(path.endsWith('/me'))return options.refreshFails&&attempts?send({code:'unavailable'},503):joined?send(own):send({code:'participation_required'},403);
+    if(path.endsWith('/me'))return sessionUser!=='synthetic-user'||(options.refreshFails&&attempts)?send({code:'unavailable'},503):joined?send(own):send({code:'participation_required'},403);
     if(path.endsWith('/join')){joined=true;return send({participationId:'synthetic-player',created:true},201);}
     if(path.endsWith('/claims')){
       requests.push(route.request().postDataJSON());attempts++;
@@ -46,17 +48,17 @@ async function mount(page: Page, options: {joined?:boolean;unknown?:boolean;refr
       return send({claimId:'synthetic-claim',replayed:attempts>1,progress:own.progress},attempts>1?200:201);
     }
     if(path.includes('/host/')) {
-      if(!options.host)return send({code:'host_required'},403);
+      if(!options.host||sessionUser!=='synthetic-user')return send({code:'host_required'},403);
       if(path.endsWith('/open')||path.endsWith('/close')){round=path.endsWith('/open')?'open':'closed';return send({status:round,closes_at:new Date(Date.now()+720000).toISOString()});}
       if(path.endsWith('/reveal'))return send({description:'Peer-confirmed and self-selected skills are separate.',skills:[{skillKey:'test',label:'Has used Figma',peerConfirmedCount:1,selfSelectedCount:0}]});
-      return send({players:[{...own.progress,displayName:own.displayName,participationId:own.participationId,codesRemaining:2,firstLineAt:null}],firstLineWinners:[],tiePolicy:'Equal first-line times share qualification.'});
+      return send({event:{title:'Synthetic event',status:round,closesAt:new Date(Date.now()+720000).toISOString()},players:[{...own.progress,displayName:own.displayName,participationId:own.participationId,codesRemaining:2,firstLineAt:null}],firstLineWinners:[],tiePolicy:'Equal first-line times share qualification.'});
     }
     if(path.endsWith('/profile'))return send({recruitmentConsent:false,skills:[]});
     return route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Test event</title></head><body><div id="root"></div></body></html>'});
   });
   async function load(){await page.goto(`https://bingo.test/events/${eventId}`);await page.addStyleTag({content:css});await page.addScriptTag({content:bundle});}
   await load();
-  return {requests,load};
+  return {requests,load,setSession:(value:string|null)=>{sessionUser=value;}};
 }
 test('phone join flow issues a card and two codes with consent initially off',async({page})=>{
   await mount(page,{joined:false,realLabels:true});
@@ -69,8 +71,8 @@ test('phone join flow issues a card and two codes with consent initially off',as
   await expect(page.getByRole('checkbox',{name:'I agree to GDG organisers contacting me about future projects using my event identity.'})).not.toBeChecked();
   await page.locator('.preferences summary').click();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
-  const smallTargets=await page.getByRole('button').evaluateAll(buttons=>buttons.filter(button=>{const box=button.getBoundingClientRect();return box.width>0&&box.height>0&&(box.width<44||box.height<44);}).map(button=>button.textContent));
-  expect(smallTargets).toEqual([]);
+  // Animated translations can report 43.99999px for a 44px target; compare rendered pixels.
+  await expect.poll(()=>page.getByRole('button').evaluateAll(buttons=>buttons.filter(button=>{const box=button.getBoundingClientRect();return box.width>0&&box.height>0&&(Math.round(box.width)<44||Math.round(box.height)<44);}).map(button=>button.textContent))).toEqual([]);
   await page.evaluate(()=>window.scrollTo(0,0));
   await page.screenshot({path:'test-results/player-mobile.png',fullPage:true});
   await page.setViewportSize({width:1440,height:1000});
@@ -103,6 +105,12 @@ test('ordinary participant sees no host controls after access is rejected',async
   await page.getByRole('button',{name:'Host',exact:true}).click();
   await expect(page.getByRole('status')).toHaveText('This account is not a host for this event.');
   await expect(page.getByRole('button',{name:'Start 12-minute round',exact:true})).toHaveCount(0);
+});
+
+test('rejected OAuth callback address explains the deployment configuration problem',async({page})=>{
+  await mount(page,{signedOut:true});
+  await page.getByRole('button',{name:'Sign in with Google'}).click();
+  await expect(page.getByRole('status')).toHaveText('Google sign-in is not enabled for this website address. Please contact your organiser.');
 });
 test('board polling pauses when hidden and stops after closure',async({page})=>{
   await page.clock.install();
@@ -188,4 +196,58 @@ test('desktop keeps the card beside a private wallet and renders the real brand 
   await page.getByRole('button',{name:'Board',exact:true}).click();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.screenshot({path:'test-results/board-desktop.png',fullPage:true});
+});
+
+
+test('expired sessions remove previously loaded host data and player codes',async({page})=>{
+  const app=await mount(page,{host:true});
+  await page.getByRole('button',{name:'Host',exact:true}).click();
+  await expect(page.getByRole('link',{name:'Download results CSV'})).toBeVisible();
+  app.setSession(null);
+  await page.getByRole('button',{name:'Refresh',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Sign in with Google'})).toBeVisible();
+  await expect(page.getByRole('link',{name:'Download results CSV'})).toHaveCount(0);
+  await expect(page.locator('.wallet')).toHaveCount(0);
+});
+
+test('changing accounts cannot retain the previous card when the new private request fails',async({page})=>{
+  const app=await mount(page);
+  await expect(page.getByRole('heading',{name:'Give a code'})).toBeVisible();
+  app.setSession('another-user');
+  await page.getByRole('button',{name:'Refresh',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Retry saved card'})).toBeVisible();
+  await expect(page.locator('.wallet')).toHaveCount(0);
+  await expect(page.getByLabel('Private invitation',{exact:true})).toHaveCount(0);
+});
+
+test('private host state overrides an older cached public round status',async({page})=>{
+  await mount(page,{host:true});
+  await page.route('**/api/events/*/board?*',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({event:{title:'Synthetic event',status:'draft',closesAt:null},players:[],page:1,total:0})}));
+  await page.getByRole('button',{name:'Host',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Close round',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Start 12-minute round',exact:true})).toBeDisabled();
+});
+
+
+test('a stalled claim times out into same-request recovery instead of staying busy',async({page})=>{
+  await page.clock.install();
+  await mount(page);
+  let release:()=>void=()=>{};
+  let submitted=false;
+  await page.route('**/api/events/*/claims',route=>new Promise<void>(resolve=>{
+    submitted=true;
+    release=()=>{void route.abort().catch(()=>{}).finally(resolve);};
+  }));
+  try {
+    await page.getByRole('button',{name:'Synthetic square 0',exact:true}).click();
+    await page.getByLabel('Code from your match').fill('C'.repeat(32));
+    await page.getByRole('button',{name:'Claim square',exact:true}).click();
+    await expect.poll(()=>submitted).toBe(true);
+    await page.clock.fastForward(31_000);
+    await expect(page.getByRole('button',{name:'Retry claim',exact:true})).toBeEnabled();
+    await expect(page.getByRole('button',{name:'Sign out',exact:true})).toBeDisabled();
+    const pending=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('gdgbingo:pending:11111111-1111-4111-8111-111111111111')??'null'));
+    expect(pending.requestId).toBeTruthy();
+    expect(pending.code).toBe('C'.repeat(32));
+  } finally {release();}
 });

@@ -44,17 +44,14 @@ test('play and join links focus the event entry, including repeated activation',
   await expect(input).toBeFocused();
 });
 
-test('decorative motion can be paused and does not block event entry',async({page})=>{
+test('decorative motion and parallax work without a pause control or blocking event entry',async({page})=>{
   await page.setViewportSize({width:1280,height:900});
   await page.emulateMedia({reducedMotion:'no-preference'});
   await mountLanding(page);
   await expect.poll(()=>page.locator('.shape-blue').evaluate(el=>getComputedStyle(el).animationName)).toBe('bingo-bounce');
   await page.mouse.move(1100,200);
   await expect.poll(()=>page.locator('.app-frame').evaluate(el=>el.style.getPropertyValue('--grid-parallax-x'))).not.toBe('');
-  await page.locator('.motion-control').click();
-  await expect(page.getByRole('checkbox',{name:'Pause animations',exact:true})).toBeChecked();
-  await expect.poll(()=>page.locator('.shape-blue').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
-  await expect.poll(()=>page.locator('.app-frame').evaluate(el=>el.style.getPropertyValue('--grid-parallax-x'))).toBe('');
+  await expect(page.getByRole('checkbox',{name:'Pause animations',exact:true})).toHaveCount(0);
   await page.getByRole('link',{name:'Let’s play'}).click();
   await expect(page.getByLabel('Have an event link?')).toBeFocused();
 });

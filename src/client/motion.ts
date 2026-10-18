@@ -7,7 +7,7 @@ export function startMotionEffects() {
   let raf = 0;
   let x = 0;
   let y = 0;
-  const allowed = () => !reduced.matches && pointer.matches && !document.hidden && !frame.querySelector<HTMLInputElement>('[data-pause-motion]')?.checked;
+  const allowed = () => !reduced.matches && pointer.matches && !document.hidden;
   function reset() {
     cancelAnimationFrame(raf); raf = 0;
     frame!.style.removeProperty('--grid-parallax-x');
@@ -27,7 +27,6 @@ export function startMotionEffects() {
   }
   frame.addEventListener('pointermove', move, {passive:true});
   frame.addEventListener('pointerleave', reset);
-  frame.addEventListener('change', event => { if(event.target instanceof HTMLInputElement && event.target.matches('[data-pause-motion]'))reset(); });
   window.addEventListener('blur', reset);
   document.addEventListener('visibilitychange', reset);
   reduced.addEventListener('change', reset);

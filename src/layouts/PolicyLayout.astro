@@ -1,0 +1,29 @@
+---
+import { BrandHeader, BrandFooter } from '../components/Brand';
+import '../styles/global.css';
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/png" href="/brand/gdg-mark.png" />
+    <title>{title} · GDG Bingo</title>
+  </head>
+  <body>
+    <a href="#policy" class="skip-link">Skip to content</a>
+    <BrandHeader><a class="header-help" href="/">Back to Bingo</a></BrandHeader>
+    <main id="policy" class="shell policy-main">
+      <article class="panel policy-copy">
+        <p class="eyebrow">GDG Bingo · GDG on Campus PUP Manila</p>
+        <h1>{title}</h1>
+        <p class="muted">Last updated: 18 October 2026</p>
+        <slot />
+      </article>
+    </main>
+    <BrandFooter />
+  </body>
+</html>

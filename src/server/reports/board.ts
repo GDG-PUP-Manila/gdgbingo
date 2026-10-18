@@ -24,14 +24,18 @@ export async function standings(tx: Transaction, eventId: string) {
     ...scoreCard(histories.get(player.id)?.positions ?? []), firstLineAt: histories.get(player.id)?.firstLineAt ?? null,
   })).sort((a,b) => b.lineCount-a.lineCount || b.claimedCount-a.claimedCount || a.displayName.localeCompare(b.displayName) || a.participationId.localeCompare(b.participationId));
 }
-export async function publicBoard(db: Database, eventId: string, page = 1) {
-  return db.transaction(async tx => {
+async function eventState(tx: Transaction, eventId: string) {
     const event = (await tx.execute<{ title: string; status: string; opens_at: Date | null; closes_at: Date | null; expired: boolean }>(sql`
       SELECT title,status,opens_at,closes_at,(closes_at IS NOT NULL AND closes_at<=clock_timestamp()) AS expired FROM event WHERE id=${eventId}`)).rows[0];
     if (!event) throw new GameError('event_not_found', 404);
+    return { id:eventId,title:event.title,status:event.expired?'closed':event.status,opensAt:event.opens_at,closesAt:event.closes_at };
+}
+export async function publicBoard(db: Database, eventId: string, page = 1) {
+  return db.transaction(async tx => {
+    const event = await eventState(tx,eventId);
     const all = await standings(tx, eventId);
     return {
-      event: { id: eventId, title: event.title, status: event.expired ? 'closed' : event.status, opensAt: event.opens_at, closesAt: event.closes_at },
+      event,
       page, total: all.length,
       players: all.slice((page-1)*100,page*100).map(player => ({ displayName: player.displayName, claimedCount: player.claimedCount, lineCount: player.lineCount, blackout: player.blackout, codesRemaining: player.codesRemaining })),
     };
@@ -40,8 +44,9 @@ export async function publicBoard(db: Database, eventId: string, page = 1) {
 export async function hostStandings(db: Database, eventId: string, userId: string) {
   return db.transaction(async tx => {
     await requireHost(tx,eventId,userId);
+    const event = await eventState(tx,eventId);
     const players = await standings(tx,eventId);
     const earliest = players.map(player => player.firstLineAt).filter((time): time is string => Boolean(time)).sort()[0];
-    return { players, firstLineWinners: earliest ? players.filter(player => player.firstLineAt === earliest).map(player => player.participationId) : [], tiePolicy: 'Equal first-line times share qualification.' };
+    return { event, players, firstLineWinners: earliest ? players.filter(player => player.firstLineAt === earliest).map(player => player.participationId) : [], tiePolicy: 'Equal first-line times share qualification.' };
   });
 }

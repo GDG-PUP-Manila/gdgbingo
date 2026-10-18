@@ -1,0 +1,40 @@
+---
+import PolicyLayout from '../layouts/PolicyLayout.astro';
+export const prerender = true;
+---
+<PolicyLayout title="Privacy policy" description="How GDG Bingo collects, uses, shares and retains account and event information.">
+  <p>GDG Bingo is a community networking game operated by the GDG on Campus PUP Manila organisers. This policy explains how information is handled when you visit this website, sign in with Google, or participate in an event.</p>
+
+  <h2>Information we collect</h2>
+  <ul>
+    <li><strong>Google sign-in information.</strong> Google and our authentication provider, Neon Auth, process your sign-in. Basic identity permissions can provide your account identifier, email address, name and profile picture. The game uses your validated account identifier to recognise you and protect access to your event. We do not receive your Google password or request access to Gmail, Drive, contacts or calendars for gameplay.</li>
+    <li><strong>Event participation.</strong> We store your chosen display name, event membership, invitation redemption, assigned card, outgoing codes and their use, square claims, the account relationships involved in those claims, request identifiers, timestamps and progress. These records let us save your game, prevent duplicate use of codes and calculate standings.</li>
+    <li><strong>Optional preferences.</strong> We store skills you choose to share, whether you consent to organiser follow-up, and the time that consent was given. Follow-up consent starts off. Gameplay also records traits confirmed through exchanged codes; those are participants' statements, not verified qualifications.</li>
+    <li><strong>Technical information.</strong> Hosting and authentication providers may process IP addresses, browser/request information, security logs and session information to deliver and secure the service. The application records rate-limit state and host actions such as opening a round, revealing skills and exporting results.</li>
+  </ul>
+
+  <h2>How we use information</h2>
+  <p>We use account and event information to authenticate participants, enforce invitation and host access, issue and redeem codes, restore saved cards, display event progress, determine results and investigate technical problems or misuse. Optional skills and consent support community project matching and organiser follow-up. Declining follow-up consent does not prevent you from playing.</p>
+  <p>We do not sell participant information or use Google account information for personalised advertising. We do not use it to train general-purpose AI models.</p>
+
+  <h2>Who can see information</h2>
+  <p>Anyone with the event link can view its public board, including display names, claimed-square counts, completed lines and the number of codes remaining. Choose a display name you are comfortable making public. Your unused code values and invitation are private; share a code only with the person you want to confirm.</p>
+  <p>Authorised hosts can view event standings, first-line qualifiers, aggregate skill counts and download event results. Exports include display names and game results; follow-up account identifiers and detailed skill fields are included only for participants who have opted into organiser follow-up. Organisers administer the stored event records and handle support requests.</p>
+  <p>Vercel hosts the website, Neon provides the database and authentication, and Google provides sign-in. These providers process information to deliver their services under their own policies. Processing locations can differ from your location. See <a href="https://vercel.com/legal/privacy-policy">Vercel's privacy policy</a>, <a href="https://neon.com/privacy-policy">Neon's privacy policy</a> and <a href="https://policies.google.com/privacy">Google's privacy policy</a>.</p>
+  <p>Code exchanges in Microsoft Teams happen separately. GDG Bingo does not read your Teams chats or import meeting messages. Information you send there is subject to Microsoft's and your organisation's policies.</p>
+
+  <h2>Cookies and browser storage</h2>
+  <p>Authentication uses session cookies to keep you signed in. Browser session storage remembers the event to return to after sign-in and, when necessary, the original pending claim so an interrupted request can be retried safely. Pending claim data includes the received code and is removed once its outcome is confirmed. The app does not add advertising cookies or a separate analytics tracker.</p>
+
+  <h2>Retention and security</h2>
+  <p>Our event-data retention period is 30 days after the round ends. Organisers must run the event cleanup procedure to remove expired event records; cleanup is not an automatic background task in the current deployment. Authentication accounts and provider logs or backups have separate lifecycles. An exported results file is a separate copy managed by its organiser; contact us about retention or deletion of those copies.</p>
+  <p>We use HTTPS, authenticated access checks, server-side host permissions, keyed token digests and encryption of stored outgoing codes. No online service can guarantee absolute security. Keep invitations and code values out of public posts and shared screenshots.</p>
+
+  <h2>Your choices and requests</h2>
+  <p>You can change your optional skills or withdraw follow-up consent in <strong>My card → Stay involved → Save preferences</strong>. Withdrawal stops inclusion of follow-up fields in future exports; it cannot recall a file already downloaded. Contact the organisers to request access, correction or deletion of your event information and any retained exports, or to discuss information still needed for event integrity. We may ask you to confirm which account and event the request concerns.</p>
+  <p>You can also remove the app's access from your <a href="https://myaccount.google.com/connections">Google Account connections</a>. Revoking Google access does not itself delete existing event records; send a deletion request to the organisers.</p>
+
+  <h2>Contact and updates</h2>
+  <p>For privacy questions, data requests or security concerns, email <a href="mailto:gdgpup.technologydepartment@gmail.com">gdgpup.technologydepartment@gmail.com</a>. Please include the event name or link, but never send your password, session cookie or unused codes.</p>
+  <p>Changes to this policy will be published here with an updated date. Material changes to optional data use will be explained before asking for any new consent.</p>
+</PolicyLayout>

@@ -8,7 +8,7 @@ type Player = Progress & { displayName: string; codesRemaining: number };
 type OwnState = { participationId: string; displayName: string; recruitmentConsent: boolean; skills: string[]; card: Cell[]; codes: { ordinal: number; token: string; spent: boolean }[]; progress: Progress };
 type Board = { event: { title: string; status: string; closesAt: string | null }; players: Player[]; page: number; total: number };
 type PendingClaim = { userId: string; squareKey: string; code: string; requestId: string };
-type HostState = { players: (Player & { participationId: string; firstLineAt: string | null })[]; firstLineWinners: string[]; tiePolicy: string };
+type HostState = { event?: Board['event']; players: (Player & { participationId: string; firstLineAt: string | null })[]; firstLineWinners: string[]; tiePolicy: string };
 type Reveal = { description: string; skills: { skillKey: string; label: string; peerConfirmedCount: number; selfSelectedCount: number }[] };
 
 class ApiError extends Error {
@@ -16,11 +16,18 @@ class ApiError extends Error {
   constructor(code: string, status: number) { super(code); this.status = status; }
 }
 async function api<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin', ...options });
-  let data;
-  try { data = await response.json(); } catch { throw new ApiError('connection_failed',503); }
-  if (!response.ok) throw new ApiError(data.code ?? data.error ?? 'request_failed',response.status);
-  return data;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if(options?.signal?.aborted)abort();
+  options?.signal?.addEventListener('abort',abort,{once:true});
+  const timeout = setTimeout(abort,30_000);
+  try {
+    const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin', ...options, signal:controller.signal });
+    let data;
+    try { data = await response.json(); } catch { throw new ApiError('connection_failed',503); }
+    if (!response.ok) throw new ApiError(data?.code ?? data?.error ?? 'request_failed',response.status);
+    return data;
+  } finally { clearTimeout(timeout);options?.signal?.removeEventListener('abort',abort); }
 }
 const messages: Record<string,string> = {
   invitation_invalid: 'That invitation is invalid, expired, or already used by another account.',
@@ -33,12 +40,27 @@ const messages: Record<string,string> = {
   event_not_found: 'This event could not be found. Check the link from your organiser.',
 };
 const describe = (error: unknown) => error instanceof ApiError ? messages[error.message] ?? 'The request could not be confirmed. Please try again.' : 'Connection interrupted. Please try again.';
+const signInMessages: Record<string,string> = {
+  INVALID_CALLBACKURL: 'Google sign-in is not enabled for this website address. Please contact your organiser.',
+  INVALID_CALLBACK_URL: 'Google sign-in is not enabled for this website address. Please contact your organiser.',
+  INVALID_ORIGIN: 'Google sign-in is not enabled for this website address. Please contact your organiser.',
+  origin_rejected: 'Google sign-in is not enabled for this website address. Please contact your organiser.',
+  auth_not_configured: 'Google sign-in is not configured on this deployment yet. Please contact your organiser.',
+};
+function describeSignIn(error: unknown) {
+  const code = error && typeof error==='object' && 'code' in error && typeof error.code==='string' ? error.code : '';
+  const message = error && typeof error==='object' && 'message' in error && typeof error.message==='string' ? error.message : '';
+  // The Neon SDK normalises HTTP 403 codes but preserves the upstream message.
+  // Match known errors without showing arbitrary upstream error content.
+  return signInMessages[code] ?? signInMessages[message] ?? (/^invalid (callback\s?url|origin)\b/i.test(message) ? signInMessages.INVALID_CALLBACKURL : 'Google sign-in could not start. Please try again.');
+}
 
 export default function GameApp({ eventId }: { eventId: string }) {
   const base = `/api/events/${eventId}`;
   const storageKey = `gdgbingo:pending:${eventId}`;
   const [userId,setUserId] = useState<string | null>(null);
   const [own,setOwn] = useState<OwnState | null>(null);
+  const [ownLoaded,setOwnLoaded] = useState(false);
   const [board,setBoard] = useState<Board | null>(null);
   const [message,setMessage] = useState('Loading your event…');
   const [busy,setBusy] = useState(false);
@@ -56,13 +78,22 @@ export default function GameApp({ eventId }: { eventId: string }) {
   const selectedButton = useRef<HTMLButtonElement | null>(null);
   const inFlight = useRef(false); const codeInput = useRef<HTMLInputElement>(null);
   const boardRequest = useRef<AbortController | null>(null);
+  const identity = useRef<string | null>(null);
   const client = () => createAuthClient(new URL('/api/auth',location.origin).href);
-  async function loadOwn() {
+  function clearPrivateViews() {
+    setOwn(null);setOwnLoaded(false);setHost(null);setReveal(null);setPending(null);
+    setSelected(null);setCode('');setName('');setInvitation('');setConsent(false);setSkills([]);
+    setHostDenied(false);setConfirmClose(false);
+  }
+  async function loadOwn(expectedIdentity = identity.current) {
     try {
       const state = await api<OwnState>(`${base}/me`);
+      if(identity.current!==expectedIdentity)return;
       setOwn(state); setConsent(state.recruitmentConsent); setSkills(state.skills);
+      setOwnLoaded(true);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 403) { setOwn(null); return; }
+      if(identity.current!==expectedIdentity)return;
+      if (error instanceof ApiError && error.status === 403) { setOwn(null);setOwnLoaded(true); return; }
       throw error;
     }
   }
@@ -78,20 +109,25 @@ export default function GameApp({ eventId }: { eventId: string }) {
   async function refresh() {
     setBusy(true);
     try {
-      await loadBoard();
+      const [sessionResult,boardResult] = await Promise.allSettled([api<{userId:string}>('/api/session'),loadBoard()]);
       try {
-        const session = await api<{ userId: string }>('/api/session');
+        if(sessionResult.status==='rejected')throw sessionResult.reason;
+        const session = sessionResult.value;
+        if(identity.current!==session.userId)clearPrivateViews();
+        identity.current=session.userId;
         setUserId(session.userId);
-        await loadOwn();
+        await loadOwn(session.userId);
         let restored: PendingClaim | null = null;
         try { restored = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null'); } catch { /* Corrupt local data is ignored. */ }
         if (restored && restored.userId === session.userId && typeof restored.requestId === 'string' && typeof restored.code === 'string' && typeof restored.squareKey === 'string') {
           setPending(restored); setMessage('An earlier claim needs confirmation. Use Retry claim before submitting another.');
         } else { setPending(null); setMessage('Ready. Find someone who matches a square.'); }
       } catch (error) {
-        if (error instanceof ApiError && error.status === 401) { setUserId(null); setOwn(null); setMessage('Sign in with Google to join.'); }
+        if(sessionResult.status==='rejected'||(error instanceof ApiError&&error.status===401)) { identity.current=null;clearPrivateViews();setUserId(null); }
+        if (error instanceof ApiError && error.status === 401) setMessage('Sign in with Google to join.');
         else throw error;
       }
+      if(boardResult.status==='rejected')throw boardResult.reason;
     } catch (error) { setMessage(describe(error)); }
     finally { setBusy(false); setLoaded(true); }
   }
@@ -127,14 +163,17 @@ export default function GameApp({ eventId }: { eventId: string }) {
     try {
       sessionStorage.setItem('gdgbingo:return-event',eventId);
       const result = await client().signIn.social({provider:'google',callbackURL:new URL('/auth/callback',location.origin).href});
-      if(result.error) throw new Error();
-    } catch { setMessage('Google sign-in could not start. Please try again.'); }
+      if(result.error) {
+        setMessage(describeSignIn(result.error));
+      }
+    } catch (error) { setMessage(describeSignIn(error)); }
     finally { setBusy(false); }
   }
   async function signOut() {
     setBusy(true);
     try {
       const result=await client().signOut(); if(result.error) throw new Error();
+      identity.current=null;clearPrivateViews();
       sessionStorage.removeItem(storageKey); setPending(null); setOwn(null); setUserId(null); setHost(null); setReveal(null);
       setCode(''); setInvitation(''); setMessage('Signed out.');
     } catch {setMessage('Sign-out could not be confirmed. Please try again.');}
@@ -174,23 +213,49 @@ export default function GameApp({ eventId }: { eventId: string }) {
     catch(error){setMessage(describe(error));}finally{setBusy(false);}
   }
   async function hostAction(action: 'state'|'open'|'close'|'reveal') {
+    const requestedIdentity=identity.current;
+    if(!requestedIdentity)return;
     setBusy(true);
+    let confirmed = false;
     try {
-      if(action==='reveal') setReveal(await api<Reveal>(`${base}/host/reveal`));
-      else {
+      if(action==='reveal') {
+        const result=await api<Reveal>(`${base}/host/reveal`);
+        if(identity.current!==requestedIdentity)return;
+        setReveal(result);
+      } else {
         let changed: {status:string;closes_at?:string} | null = null;
         if(action!=='state') {
-          const result = await api<{status:string;closes_at?:string}>(`${base}/host/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-          changed = result;
-          setBoard(current=>current?{...current,event:{...current.event,status:result.status,closesAt:result.closes_at??current.event.closesAt}}:current);
+          changed = await api<{status:string;closes_at?:string}>(`${base}/host/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+          confirmed=true;
+          if(identity.current!==requestedIdentity)return;
+          const receipt=changed;
+          setBoard(current=>current?{...current,event:{...current.event,status:receipt.status,closesAt:receipt.closes_at??current.event.closesAt}}:current);
+          setConfirmClose(false);
         }
-        setHost(await api<HostState>(`${base}/host/state`)); await loadBoard();
-        // Public board data can be cached for 10 seconds; the host receipt is newer.
-        if(changed) { const result=changed; setBoard(current=>current?{...current,event:{...current.event,status:result.status,closesAt:result.closes_at??current.event.closesAt}}:current); }
+        const [privateState,publicState]=await Promise.allSettled([api<HostState>(`${base}/host/state`),loadBoard()]);
+        if(identity.current!==requestedIdentity)return;
+        if(privateState.status==='fulfilled') {
+          setHost(privateState.value);
+          const authoritative=privateState.value.event;
+          // Private host state is uncached; public standings can be ten seconds older.
+          if(authoritative)setBoard(current=>current?{...current,event:authoritative}:current);
+          else if(changed) {const receipt=changed;setBoard(current=>current?{...current,event:{...current.event,status:receipt.status,closesAt:receipt.closes_at??current.event.closesAt}}:current);}
+        } else {
+          if(!confirmed)throw privateState.reason;
+          if(privateState.reason instanceof ApiError&&[401,403].includes(privateState.reason.status)){setHost(null);setReveal(null);}
+        }
+        if(confirmed&&(privateState.status==='rejected'||publicState.status==='rejected')) {
+          setMessage(`${action==='open'?'The round is open.':'The round is closed.'} Some details could not refresh. Select Host to reload them.`);
+          return;
+        }
       }
       setMessage(action==='open'?'The 12-minute round is open.':action==='close'?'The round is closed.':'Host information updated.');
-      setHostDenied(false); setConfirmClose(false);
-    }catch(error){if(error instanceof ApiError && error.status===403){setHostDenied(true);setHost(null);}setMessage(describe(error));}finally{setBusy(false);}
+      setHostDenied(false);setConfirmClose(false);
+    } catch(error) {
+      if(identity.current!==requestedIdentity)return;
+      if(error instanceof ApiError&&[401,403].includes(error.status)){setHostDenied(true);setHost(null);setReveal(null);}
+      setMessage(describe(error));
+    } finally {setBusy(false);}
   }
   const seconds = board?.event.closesAt ? Math.max(0,Math.ceil((new Date(board.event.closesAt).getTime()-clock)/1000)) : null;
   const open = board?.event.status==='open' && (seconds===null || seconds>0);
@@ -215,12 +280,13 @@ export default function GameApp({ eventId }: { eventId: string }) {
       {!loaded&&<div className="panel loading-panel" aria-busy="true"><div className="skeleton skeleton-heading"/><div className="skeleton skeleton-card"/><p>Getting your event ready…</p></div>}
       {loaded&&!board&&<section className="panel empty-state"><Icon name="info"/><h2>Let’s find your event</h2><p>Check your connection and the event link shared by your organiser.</p><button className="primary" disabled={busy} onClick={()=>void refresh()}>Try again</button><a href="/">Back to GDG Bingo</a></section>}
       {loaded&&board&&!userId&&<section className="panel join-panel"><div className="icon-chip blue"><Icon name="people"/></div><p className="eyebrow">Your next conversation starts here</p><h2>Join the room</h2><p>Sign in with Google, then enter the private invitation from your organiser. Your card and two codes will be waiting.</p><button className="primary" disabled={busy} onClick={()=>void signIn()}>Sign in with Google <Icon name="arrow"/></button></section>}
-      {userId&&!own&&<form className="panel join-panel" onSubmit={join}><p className="eyebrow">You’re one step away</p><h2>Your invitation</h2><p className="muted">Use the private invitation your organiser sent you. This is different from a player’s outgoing code.</p>
+      {userId&&ownLoaded&&!own&&<form className="panel join-panel" onSubmit={join}><p className="eyebrow">You’re one step away</p><h2>Your invitation</h2><p className="muted">Use the private invitation your organiser sent you. This is different from a player’s outgoing code.</p>
         <label htmlFor="name">Display name</label><input id="name" type="text" placeholder="What should we call you?" maxLength={80} required value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname"/>
         <label htmlFor="invitation">Private invitation</label><input id="invitation" type="text" maxLength={80} required value={invitation} onChange={e=>setInvitation(e.target.value)} autoComplete="off" spellCheck={false}/>
         <p className="muted">Your name and progress appear on the public board. Event records are retained for 30 days. Recruitment follow-up is optional.</p><button className="primary" disabled={busy}>Join event <Icon name="arrow"/></button>
       </form>}
-      {board&&<div className="event-toolbar"><nav className="tabs" aria-label="Event views">{(['card','board','host'] as const).map(item=><button key={item} aria-pressed={tab===item} onClick={()=>{setTab(item);if(item==='host'&&userId)void hostAction('state');}}>{item==='card'?'My card':item==='board'?'Board':'Host'}</button>)}</nav>
+      {userId&&!ownLoaded&&loaded&&<section className="panel empty-state"><h2>We couldn’t load your saved card</h2><p>Refresh to try again. You don’t need a new invitation or new codes.</p><button disabled={busy} onClick={()=>void refresh()}>Retry saved card</button></section>}
+      {board&&<div className="event-toolbar"><nav className="tabs" aria-label="Event views">{(['card','board','host'] as const).map(item=><button key={item} disabled={busy} aria-pressed={tab===item} onClick={()=>{setTab(item);if(item==='host'&&userId)void hostAction('state');}}>{item==='card'?'My card':item==='board'?'Board':'Host'}</button>)}</nav>
         {own&&<div className="metrics" aria-label="Your progress"><div><strong>{own.progress.claimedCount}<small>/24</small></strong><span>Squares</span></div><div><strong>{own.progress.lineCount}</strong><span>Lines</span></div><div><strong>{available}</strong><span>Codes to give</span></div></div>}
       </div>}
       {tab==='card'&&own&&<>

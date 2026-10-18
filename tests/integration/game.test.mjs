@@ -41,6 +41,16 @@ test('claim, host and reporting services on the full PostgreSQL schema', async t
     const claim=(claimant=0,owner=1,ordinal=0,square=0,requestId=randomUUID())=>({eventId,userId:users[claimant].userId,code:users[owner].codes[ordinal].token,squareKey:`square-${square}`,requestId});
     return {eventId,users,claim};
   }
+  await t.test('private host state reports draft, open and expired rounds from database time',async()=>{
+    const f=await fixture(false);
+    assert.equal((await hostStandings(db,f.eventId,'host')).event.status,'draft');
+    await setRoundState(db,f.eventId,'host','open');
+    const opened=await hostStandings(db,f.eventId,'host');
+    assert.equal(opened.event.status,'open');
+    assert.ok(opened.event.closesAt);
+    await pool.query("UPDATE event SET opens_at=clock_timestamp()-interval '13 minutes', closes_at=clock_timestamp()-interval '1 second' WHERE id=$1",[f.eventId]);
+    assert.equal((await hostStandings(db,f.eventId,'host')).event.status,'closed');
+  });
   await t.test('one contested code commits once and replay works after closure',async()=>{
     const f=await fixture(); const a=f.claim(),b=f.claim(2);
     const results=await Promise.allSettled([redeemClaim(db,keys,a),redeemClaim(db,keys,b)]);

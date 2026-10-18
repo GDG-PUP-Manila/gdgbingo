@@ -279,3 +279,93 @@ localhost browser independently observed the bounce and parallax, one pause
 control, no page errors and no horizontal overflow. The owner subsequently
 authorised a local commit of this UI/motion changeset and will run the push
 themselves. Remote publication and Vercel deployment remain owner-controlled.
+
+### Deployment-address sign-in follow-up
+
+The owner reported failed Google sign-in on the per-deployment address
+`https://gdgbingo-jskls10vp-gdgpupmnls-projects.vercel.app`. A bounded sign-in
+initiation probe reproduced HTTP 403 with `INVALID_CALLBACKURL`. The stable
+branch alias returned 200, and a fresh browser on that alias reached
+`https://accounts.google.com`. This isolates the reported failure to the
+unapproved deployment callback origin; no Vercel authentication switch or
+server authorization bypass is needed. The existing trusted stable alias can
+be used without changing the Neon allowlist. No trusted-domain settings or
+Google credentials were modified during this investigation.
+
+At the owner's request, the animation pause control and its handlers/styles
+were removed. System reduced-motion support remains. Sign-in messages now
+recognise known callback/origin configuration errors, including the SDK's
+normalised thrown errors, without displaying arbitrary upstream details.
+The 15 existing browser scenarios passed after pause removal, and the new
+rejected-callback scenario passed after the SDK error-mapping correction.
+These follow-up source changes are local and have not been committed or pushed.
+
+### Pre-tester audit after successful hosted sign-in
+
+The owner confirmed that Google authentication now works on the trusted stable
+preview alias. A further implementation review fixed three recovery issues:
+
+- Refresh clears previously loaded cards, codes, host reports and reveal data
+  when the validated account changes or its session becomes unavailable. A
+  failed private-state fetch for a new account offers recovery instead of
+  retaining the previous account's card or requesting a fresh invitation.
+- Application API requests time out after 30 seconds. An interrupted claim
+  retains its original user-scoped request ID and code for the existing safe
+  retry flow; a timeout does not issue a second claim automatically.
+- Private host state now includes database-clock round metadata. Host controls
+  use that uncached result after starting/closing a round, so an older public
+  CDN response cannot undo the confirmed host status in the UI. Confirmed
+  mutations remain confirmed if a subsequent refresh fails.
+
+Fresh verification: production build and Vercel artifact checks passed; Astro
+checking found zero errors, warnings or hints across 41 files; all 39 Node
+checks (including suite parents) and all 20 Chromium browser cases passed;
+npm audit reported zero vulnerabilities. Browser cases mount the actual UI
+with mocked API responses, while integration checks use isolated real local
+PostgreSQL. A fresh browser against the owner's running localhost server
+verified the play link focuses the event field, a 390px layout fits, and no
+page errors occur. The existing hosted preview returned anonymous 401/private
+no-store for session and host-state routes, and its public board reported the
+previous rehearsal closed. Hosted probes do not validate these local fixes.
+
+The local changes are suitable for an updated controlled-testing preview.
+Before inviting testers: publish these fixes, create a fresh development
+rehearsal without resetting the closed event, add their accounts to Google's
+Testing audience, distribute private invitations individually, and rehearse
+one full HTTPS round with the existing test host. The final assigned event
+host is still pending the owner's account details. Production launch and
+350-player hosted capacity remain unverified. No commit, push, deployment,
+database mutation or host reassignment was performed during this audit.
+
+### Google branding verification follow-up
+
+The owner reported Google's rejection for unverified homepage ownership,
+missing homepage privacy link, an unavailable/insufficient privacy page and
+an insufficiently distinctive logo. Public, prerendered `/privacy` and
+`/terms` pages now describe the implemented account/event data, public
+standings, host exports, optional consent, provider processing, session
+storage, manual 30-day event cleanup and contact-based deletion requests.
+The shared footer links both pages, including from the homepage. Contact
+uses the developer email shown by the owner in Google Cloud.
+
+These source changes must be deployed before resubmission. Search Console
+ownership verification needs a tag from the owner's Google account and a
+subsequent live verification; no tag is fabricated or ownership claimed.
+Follow Google's requested 24-hour wait after successful ownership
+verification. The uploaded OAuth logo remains an owner-managed branding
+setting: replace the generic symbol with distinctive, authorised Bingo
+branding or remove the optional logo while resolving verification. No
+Google branding setting has been changed by the agent.
+
+Validation: production build and artifact verification passed; Astro checking
+reported zero diagnostics across 44 files. A Chromium check of the built
+static output followed the homepage privacy link and terms link, verified
+policy content, checked both pages at 360px and reported no page errors.
+The pages remain local until the owner publishes the changes.
+
+The owner subsequently supplied the Search Console HTML verification tag.
+It is now included directly in the prerendered homepage head. The token is
+intentionally public; keep the tag in future deployments to retain ownership
+verification. This prepares the site proof, but does not itself verify the
+property: publish the updated homepage to `https://gdgbingo.vercel.app/`,
+then select Verify in the owner's Search Console account.
