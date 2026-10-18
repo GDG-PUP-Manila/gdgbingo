@@ -3,7 +3,7 @@ spine_type: BUILD
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.3
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -31,8 +31,11 @@ Read in this order before writing code:
 6. This guide
 7. `QAD` — before calling anything done
 
-**Only build against `Locked` docs.** If the doc you need is `Draft`, ask before
-proceeding. Each GitHub issue names the `PRD-F#` / `INV-#` it implements.
+**Default: build against `Locked` docs.** On 2026-10-18 the owner explicitly
+authorised full phased development against the Draft specifications. Continue
+within that authorisation without requesting it again. Document locks and
+launch acceptance remain separate gates. Each issue names its feature and
+invariant scope.
 
 ### To build X, read Y
 
@@ -47,27 +50,42 @@ proceeding. Each GitHub issue names the `PRD-F#` / `INV-#` it implements.
 
 ## 2. Pinned stack
 
-No `package.json` exists yet. Versions below are the npm registry `latest` on
-2026-10-18 and are candidates only; the scaffold issue pins exact versions from
-the lockfile and updates this table.
+The root package and lockfile now pin the application dependencies. The
+original isolated package remains in `spikes/phase1/`. Current commands and
+evidence are in the root README and `docs/development-status.md`. Hosted
+runtime, quotas and launch acceptance remain unverified.
 
 | Layer | Technology | Version | Verified | Source |
 |-------|-----------|---------|----------|--------|
-| Runtime | Node.js | 22.21.1 (local); Vercel runtime TBD at scaffold | unverified | https://vercel.com/docs/functions/runtimes/node-js |
-| Language | TypeScript | 7.0.2 candidate | unverified | https://www.npmjs.com/package/typescript |
-| Framework | Astro | 7.4.0 candidate | unverified | https://docs.astro.build/ |
-| UI | React via `@astrojs/react` | 19.3.1 / 7.1.0 candidate | unverified | https://docs.astro.build/en/guides/integrations-guide/react/ |
-| Adapter | `@astrojs/vercel` | 11.0.15 candidate | unverified | https://docs.astro.build/en/guides/integrations-guide/vercel/ |
-| Styling | Tailwind CSS | 4.3.3 candidate | unverified | https://tailwindcss.com/docs |
-| ORM | Drizzle ORM / Drizzle Kit | 0.45.4 / 0.31.11 candidate | unverified | https://orm.drizzle.team/ |
-| DB driver | `@neondatabase/serverless` | 1.2.0 candidate | unverified | https://neon.com/docs/serverless/serverless-driver |
-| Auth | Neon Auth | TBD at Phase 1 spike | unverified | https://neon.com/docs/auth/overview |
-| Unit/integration tests | Vitest | 5.0.5 candidate | unverified | https://vitest.dev/ |
-| Browser tests | Playwright | 1.64.1 candidate | unverified | https://playwright.dev/ |
+| Runtime | Node.js | 24.8.0 local; 24.x Vercel artifact | local build only; hosted runtime pending | https://vercel.com/docs/functions/runtimes/node-js |
+| Language | TypeScript | 5.9.3 spike candidate | Astro check passed locally | https://www.npmjs.com/package/typescript |
+| Framework | Astro | 7.4.0 candidate | isolated local build passed | https://docs.astro.build/ |
+| UI | React via `@astrojs/react` | 19.3.1 / 7.1.0 | root island built; five mocked-HTTP Chromium cases passed | https://docs.astro.build/en/guides/integrations-guide/react/ |
+| Adapter | `@astrojs/vercel` | 11.0.15 candidate | Node 24 artifact inspected; deployed cache pending | https://docs.astro.build/en/guides/integrations-guide/vercel/ |
+| Styling | Tailwind CSS | 4.3.3 | root build and phone browser-island checks passed | https://tailwindcss.com/docs |
+| ORM | Drizzle ORM / Drizzle Kit | 0.45.4 / 0.31.11 | full-schema local tests and actual development migrations/join passed | https://orm.drizzle.team/ |
+| DB driver | `@neondatabase/serverless` | 1.2.0 candidate | 8 bounded Neon Pool transaction checks passed; capacity pending | https://neon.com/docs/serverless/serverless-driver |
+| Auth | Neon JS 0.8.0-beta, generic server adapter | isolated spike lockfile | 11 local auth/API checks; user-reported localhost OAuth lifecycle passed; hosted verification pending | https://neon.com/docs/auth/overview |
+| Unit/integration tests | Node test runner | Node 24 | 38 checks passed; wider QAD cases remain | https://nodejs.org/api/test.html |
+| Browser tests | Playwright | 1.64.1 | five browser-island checks passed with mocked HTTP | https://playwright.dev/ |
 | Load tests | k6 | TBD at Phase 5 | unverified | https://grafana.com/docs/k6/latest/ |
 
-TypeScript 7 is the native-compiler release; confirm Astro's type tooling
-supports it at scaffold time, else pin the newest 5.x.
+The spike deliberately pins TypeScript 5.9.3 and passes Astro checking; it does
+not establish TypeScript 7 compatibility. Current checks use Node test,
+Playwright and a compressed local service/database workload. Full HTTP/Auth
+capacity and QAD acceptance remain separate; k6 is a future hosted-test candidate.
+
+See [spike results](../spikes/phase1/results.md) for exact checks, dependency
+override, beta-peer warnings, and remaining limitations; see
+[setup](../spikes/phase1/SETUP.md) to configure the live test services.
+
+Node 24 enforcement (verified 2026-10-18): root `engines.node` selects `24.x`
+for Vercel; `.nvmrc` selects the same major locally. `.npmrc` enables
+`engine-strict` for installs and `devEngines.runtime` rejects other Node majors
+before npm install/ci/run commands. The tested local tools are Node 24.8.0 and
+npm 11. Use `nvm install 24.8.0` followed by `nvm use 24.8.0` on nvm-windows.
+Sources: [npm devEngines](https://docs.npmjs.com/cli/v11/configuring-npm/package-json/#devengines),
+[Vercel Node versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
 
 ### Known deprecations
 
@@ -80,7 +98,7 @@ supports it at scaffold time, else pin the newest 5.x.
 
 ## 3. Commands
 
-Planned; will be copied from `package.json` once the scaffold lands.
+Current root commands are recorded in `package.json`; migrations are explicit.
 
 | Task | Command |
 |------|---------|
@@ -89,13 +107,68 @@ Planned; will be copied from `package.json` once the scaffold lands.
 | Build | `npm run build` |
 | Test | `npm test` |
 | E2E | `npm run test:e2e` |
-| Lint | `npm run lint` |
+| Dependency audit | `npm audit` |
 | Typecheck | `npm run typecheck` (`astro check`) |
+| Local workload | `npm run test:load:local` |
+| Artifact check | `npm run verify:build` |
 | Migrations | `npm run db:generate`, `npm run db:migrate` |
 | Docs | `python $SPINE_HOME/scripts/check.py docs/` |
 
 Long-running commands (dev servers, watchers) must be run by the owner in their
 own terminal, not by an agent in a blocking shell call.
+
+### 3.1 Private SPINE validation and evidence
+
+SPINE 0.3.0 is private. Contributors without access may use `docs/` directly
+under the explicit exception in `AGENTS.md`. Do not replace the canonical
+validator with an invented equivalent or describe manual checks as a SPINE pass.
+
+Access check on 2026-10-18: `SPINE_HOME` unset, neither documented home-directory
+fallback present, and the authenticated GitHub request for
+`repos/slvdrvncntjvr/spine/git/ref/tags/v0.3.0` returned HTTP 404. This establishes
+that the current login cannot resolve the pinned ref; it does not establish
+whether the private repository or tag is missing. Validator not run locally.
+
+To satisfy the lock gate without exposing private engine contents:
+
+1. An authorised maintainer resolves tag `v0.3.0`, records its immutable engine
+   commit, and uses the canonical checker from that revision.
+2. Validate the exact candidate project commit with
+   `python <engine-root>/scripts/check.py docs/ --strict`.
+3. Attach redacted output, exit code, project commit, engine commit/tag, Python
+   version, and date to the lock review. Grant collaborator access separately
+   if local reproducibility is required; never commit tokens or private engine
+   source into this repository.
+4. Re-run after subsequent document changes; a pass for an older revision is
+   historical evidence only. Checkpoint verification is a separate command
+   required only when checkpoints exist.
+
+A maintainer-run report is the proposed access route, not a completed check.
+Until the owner accepts that route and the report exists, index validation
+stays pending and the affected document locks remain blocked. Manual link/ID
+checks may support review but do not substitute for SPINE validation.
+
+### 3.2 Pre-development gate
+
+- Resolve and record Q1–Q7 / issues #1–#7 with explicit owner answers.
+- Complete issues #8–#11 as bounded integration spikes: Astro/Neon Auth,
+  PostgreSQL locking/retry recovery, Vercel static/private/CDN behaviour, and
+  dated quotas/eligibility. Store reproducible results, not documentation claims.
+- Keep spike code separate from production application scaffolding; spikes
+  may evaluate Draft designs without representing those designs as Locked.
+- Propagate approved decisions and spike findings through IDEA → PRD → SDD →
+  RFC → QAD/OPS/BUILD and update INDEX. Obtain the private validator evidence.
+- Issue #12 locks only reviewed, decision-complete documents. Keep LOG as a
+  living record. Product tests and 350-player capacity remain future release
+  gates even when design documents are Locked.
+- Issue #12 also requires the first checkpoint. An authorised SPINE maintainer
+  must create it following the pinned engine's instructions and record a clean
+  `python <engine-root>/scripts/checkpoint.py verify` result against the committed
+  candidate. No checkpoint has been created by this documentation pass.
+- The owner has now authorised application development while these gates remain
+  open. They remain requirements for document locks and launch acceptance, not
+  a reason to repeat implementation approval. Documentation corrections alone
+  never imply issue closure or a production deployment.
 
 ---
 
@@ -118,8 +191,8 @@ own terminal, not by an agent in a blocking shell call.
 - Never import `src/server/` from client components; never prefix a secret env var with `PUBLIC_`.
 - Never prerender a page that reads session, codes, or host data.
 - **INV-1:** claims commit only through `src/server/game/claim.ts` (RFC 001), backed by `UNIQUE (code_id)`.
-- **INV-2:** claim insert and code spend happen in one transaction; no other code path writes `code.redeemed_claim_id`.
-- **INV-3:** only digests of codes and invitations are stored; the logger redacts token fields; board DTOs are built from an allowlist.
+- **INV-2:** claim insert and code spend happen in one transaction. Only event-scoped retention may clear the reference while deleting both claims and codes atomically; it cannot expose unspent codes.
+- **INV-3:** code lookup uses keyed digests, private redisplay uses encrypted ciphertext, and invitations use digests; no plaintext tokens stored; the logger redacts token fields; board DTOs are built from an allowlist.
 - **INV-4:** identity comes from the session, time from SQL `now()`, scores from the game module; request bodies never carry them.
 - **INV-5:** joins go through `src/server/game/join.ts` with `UNIQUE (event_id, auth_user_id)`.
 - **INV-6:** every private route calls `requireParticipation` or `requireHost` before doing work.

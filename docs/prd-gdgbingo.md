@@ -3,7 +3,7 @@ spine_type: PRD
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.2
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -25,6 +25,10 @@ and get server-calculated lines and blackout. Hosts start and close the round,
 see standings, resolve winners, reveal peer-confirmed skill matches, and export
 consented results.
 
+Participants send outgoing bingo codes through Teams DMs, then paste received
+codes into the website. No Teams integration or email code delivery is needed;
+website authentication is separate. Rehearse attendee/guest DM permissions.
+
 ## 2. Users
 
 | User | Goal | Priority |
@@ -39,7 +43,7 @@ consented results.
 |----|---------|----------|-------------|
 | PRD-F1 | Invitation join | Must-Have | Signed-in attendee redeems a private invitation; creates exactly one participation per user per event |
 | PRD-F2 | Stable bingo card | Must-Have | 5 x 5 card, free centre, 24 squares shuffled per participant from a versioned square set and persisted |
-| PRD-F3 | Private outgoing codes | Must-Have | Each participant receives a fixed allowance of single-use codes (proposed six), viewable and copyable on any of their signed-in devices |
+| PRD-F3 | Private outgoing codes | Must-Have | Each participant receives a fixed allowance of two single-use codes, viewable and copyable on any of their signed-in devices |
 | PRD-F4 | Claim redemption | Must-Have | Claimant submits a square and another participant's code; the server validates and commits atomically |
 | PRD-F5 | Line and blackout scoring | Must-Have | Server computes claimed-square count, full rows/columns/diagonals, and blackout from committed claims |
 | PRD-F6 | Round lifecycle | Must-Have | Host opens and closes the round; deadline enforced with database time; browser countdown is informational |
@@ -78,7 +82,9 @@ Priority vocabulary: `Must-Have`, `Should-Have`, `Could-Have`, `Dropped`.
 - A valid claim commits exactly one claim and spends exactly one code.
 - Two concurrent redemptions of one code commit exactly one claim.
 - A retry with the same request ID and payload returns the original success; a changed payload with the same request ID is rejected.
-- Self-claims, codes from another event, spent codes, a repeated square, a second confirmation from the same confirmer, the free cell, and claims outside the open round are rejected, and the code stays unspent.
+- Concurrent requests under the same event/claimant/request ID are ordered before spent-code or closure checks; a successful original is replayed, including after closure. A changed concurrent payload is rejected against that committed original.
+- Self-claims, codes from another event, spent codes, a repeated square, the free cell, and claims outside the open round are rejected without newly spending a code. Previously spent codes remain spent.
+- If COMMIT acknowledgement is lost, the outcome is unknown until recovered with the same request ID; the client must not treat the code as unspent or mint a new request ID automatically.
 - p95 successful claim latency at most 2 s under test (GDGBINGO-M1).
 
 **PRD-F5 — Line and blackout scoring**
@@ -165,6 +171,6 @@ measured results.
 
 ## 7. Open questions
 
-- `TBD(owner)` Confirm six codes per participant and one accepted confirmation per other participant (LOG Q2).
-- `TBD(owner)` Square set, round duration, prizes, and tie policy (LOG Q6).
-- `TBD(owner)` Public display-name visibility, consent wording, and retention period (LOG Q7).
+- Approved 2026-10-18: two codes per participant; both can confirm different squares for the same other participant.
+- Approved development defaults: 12-minute round, first-line qualification, equal-time ties shared. Final square set and actual prizes remain pending.
+- Development defaults approved: public display names/progress, recruitment opt-in off by default, 30-day retention; final consent copy remains a release review item.
