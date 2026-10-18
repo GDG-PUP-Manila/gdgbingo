@@ -3,7 +3,7 @@ spine_type: LOG
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.2
+doc_version: 0.3
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -19,6 +19,8 @@ reconciled: 2026-10-18
 
 | Date | Decision | Rationale | Docs touched |
 |------|----------|-----------|--------------|
+| 2026-10-18 | Fixed round lifecycle polling, browser-clock admission gating and stale Host Refresh on integrated `dev` using supervised Orca workers | PRD-F6, PRD-F7 and PRD-F8; implementation in `src/components/GameApp.tsx:106`, `:135`, `:169` and `:317`; 12 added browser regressions in `tests/e2e/game.spec.ts` | root UI, tests, LOG |
+| 2026-10-18 | Owner authorised feature-branch integration into `dev` and audit remediation; this documentation pass starts from `dev` at `4272176` | Preserve the BUILD branch policy: feature/fix work targets `dev`, and release promotion remains a separate `dev` → `main` PR; integration does not lock documents, reconcile them, or approve launch | index.md, log-gdgbingo.md |
 | 2026-10-18 | Owner approved the GDG-reference UI and requested matching motion, then authorised a local commit while reserving push for themselves | Build/artifact and type checks passed; 15 browser cases passed including motion/reduced-motion and claim/host flows; no push or deployment by agent | root UI, styles, motion, tests, README, development-status.md |
 | 2026-10-18 | User confirmed the fresh two-account HTTPS rehearsal after claim exchanges, spent-code checks, reveal, close/CSV and non-host checks | User-reported manual pass; production OAuth, account headroom and hosted capacity remain open | development-status.md |
 | 2026-10-18 | User deployed preview commit 9ef5f72; hosted saved card/host controls shown; public board MISS/HIT and cookie-independent response confirmed; anonymous private routes return 401/no-store | Low-volume hosted evidence; full signed-in isolation and capacity remain pending | development-status.md |
@@ -60,6 +62,7 @@ reconciled: 2026-10-18
 | Q7 | 2026-10-18 | Approved public display names/progress, default-off recruitment consent and 30-day retention; final copy review pending | Launch | Partial |
 | Q8 | 2026-10-18 | Authorised maintainer to validate the exact candidate revision with pinned SPINE 0.3.0, or grant access for local reproducibility; see BUILD §3.1 | Validator evidence and document lock | Open |
 | Q9 | 2026-10-18 | Complete the Astro/Auth, database, Vercel/cache, and quota spikes (#8–#11) with recorded results | Document lock and app scaffolding | Open |
+| Q10 | 2026-10-18 | What owner-confirmed reconciliation date, if any, applies to development-status.md and vercel-rehearsal.md? The pinned validator requires an ISO date and accepts no unknown value; neither file records reconciliation | Faithful supplementary frontmatter and normal validation | Open |
 
 Owner approved the original two-code rules and the development defaults above.
 Google OAuth is configured; invitations remain private. The owner authorised
@@ -77,6 +80,48 @@ documents remain Draft; planned cases AB-20 through AB-24 exist; `git diff
 validation, executable application tests, or integration-spike evidence.
 Read-only GitHub verification confirmed issues #1–#12 remain open, including
 first-checkpoint creation in #12. No commit, push, or deployment was performed.
+
+Current documentation audit on 2026-10-18 starts from `dev` at `4272176`.
+The local engine resolves through `SPINE_HOME` to SPINE tag `v0.3.0`, commit
+`2e52521569f6484a8580130e7e4a747f138ea427`; Python is 3.12.9. This supersedes
+the earlier access limitation for this session only; the earlier access check
+and its evidence remain historical records. It does not resolve Q8 or Q9,
+advance any `reconciled` date, or satisfy document-lock or launch acceptance.
+
+Baseline canonical validation of 11 documents reported 2 errors and 4 warnings
+in normal mode: missing frontmatter in development-status.md and
+vercel-rehearsal.md, an unregistered rehearsal document, and open owner markers
+in IDEA, QAD and SDD. Strict mode reported 7 errors and no warnings, including
+the unresolved owner markers and unchecked index health gates. No checkpoint
+tags exist, so checkpoint verification was not applicable and none was created.
+Q10 records the missing reconciliation evidence; a coordinator question is
+pending rather than assigning an unsupported date. The existing supplementary
+bodies remain historical implementation evidence and rehearsal instructions,
+not a fresh test pass, deployment record or release approval.
+
+The coordinator subsequently directed this pass to leave both supplementary
+documents unchanged rather than invent reconciliation dates, and to complete
+the independent index registration and workflow record. Q10 remains open;
+the metadata limitation does not block ongoing UI integration or tests.
+After registration, normal canonical validation reports 2 errors and 3 warnings;
+strict validation reports 6 errors and no warnings across 11 documents. The
+two missing-frontmatter errors remain; strict mode additionally rejects the
+existing owner markers and unchecked health gates. This is a partial
+documentation repair, not a normal or strict validation pass. Both index and
+LOG are now version 0.3, with their existing reconciliation dates unchanged.
+
+Implementation verification on 2026-10-18 against the integrated `dev` working
+tree based on `4272176`: Node 24.8.0 unit/integration tests passed all 39 checks;
+Astro checking passed 44 files with zero errors, warnings or hints; the final
+production build and Vercel artifact verification passed. The isolated complete
+Chromium run passed all 32 cases (27 game and five landing), including 12 new
+regressions for round opening/closure, clock skew, Host Refresh, visibility,
+idle bounds and request overlap. Browser cases use mocked HTTP; database cases
+use temporary local PostgreSQL. No hosted capacity or live-auth acceptance is
+implied. The first combined browser run overlapped a worker's targeted run and
+lost shared trace artifacts; rerunning with `--output=test-results/final-browser`
+removed that collision. The two supplementary frontmatter errors and open
+launch decisions remain; no production database or deployment was changed.
 
 ## 3. Resolved questions
 

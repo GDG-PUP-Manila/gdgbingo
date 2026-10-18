@@ -3,7 +3,7 @@ spine_type: INDEX
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.2
+doc_version: 0.3
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -32,7 +32,7 @@ Built on SPINE 0.3.0
 | QAD · QA & Test Plan | [qad-gdgbingo.md](qad-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
 | OPS · Ops & Observability | [ops-gdgbingo.md](ops-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
 | BUILD · Build Guide | [build-gdgbingo.md](build-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
-| LOG · Session Log | [log-gdgbingo.md](log-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
+| LOG · Session Log | [log-gdgbingo.md](log-gdgbingo.md) | 0.3 | Draft | 2026-10-18 | 2026-10-18 |
 
 **Materialized at repo root (not in `docs/`):** `AGENTS.md` (SPINE pointer),
 `CLAUDE.md`, `GEMINI.md`, IDE rule pointers. Owner source drafts
@@ -44,6 +44,18 @@ the root as input material; this suite supersedes them where they differ.
 | RFC ID | File | Feature | Status | Updated |
 |--------|------|---------|--------|---------|
 | gdgbingo-rfc-001 | [rfc-gdgbingo-claim-redemption.md](rfc-gdgbingo-claim-redemption.md) | Atomic claim redemption and round closure (PRD-F4, PRD-F6) | Draft | 2026-10-18 |
+
+### 1.2 Supplementary evidence and rehearsal handoff
+
+| Document | File | Version | Status | Updated | Reconciled |
+|----------|------|---------|--------|---------|------------|
+| Development evidence | [development-status.md](development-status.md) | Unversioned | Not recorded (frontmatter missing) | 2026-10-18 | Not recorded; LOG Q10 |
+| Vercel rehearsal handoff | [vercel-rehearsal.md](vercel-rehearsal.md) | Unversioned | Not recorded (frontmatter missing) | 2026-10-18 | Not recorded; LOG Q10 |
+
+These existing filenames are retained to preserve links and historical evidence.
+Dates above are supported by their git history; owner reconciliation is not
+established by their creation or update date. Neither document supplies launch
+approval. Metadata repair is tracked in LOG Q10.
 
 ---
 

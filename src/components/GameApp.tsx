@@ -10,6 +10,8 @@ type Board = { event: { title: string; status: string; closesAt: string | null }
 type PendingClaim = { userId: string; squareKey: string; code: string; requestId: string };
 type HostState = { event?: Board['event']; players: (Player & { participationId: string; firstLineAt: string | null })[]; firstLineWinners: string[]; tiePolicy: string };
 type Reveal = { description: string; skills: { skillKey: string; label: string; peerConfirmedCount: number; selfSelectedCount: number }[] };
+const roundOrder: Record<string,number> = {draft:0,open:1,closed:2};
+const draftIdleLimit = 10*60_000;
 
 class ApiError extends Error {
   status: number;
@@ -78,12 +80,16 @@ export default function GameApp({ eventId }: { eventId: string }) {
   const selectedButton = useRef<HTMLButtonElement | null>(null);
   const inFlight = useRef(false); const codeInput = useRef<HTMLInputElement>(null);
   const boardRequest = useRef<AbortController | null>(null);
+  const boardLoad = useRef<{url:string;promise:Promise<Board>} | null>(null);
+  const roundState = useRef<{eventId:string;event:Board['event'];authoritative:boolean} | null>(null);
+  const lastActivity = useRef(0);
   const identity = useRef<string | null>(null);
   const client = () => createAuthClient(new URL('/api/auth',location.origin).href);
   function clearPrivateViews() {
     setOwn(null);setOwnLoaded(false);setHost(null);setReveal(null);setPending(null);
     setSelected(null);setCode('');setName('');setInvitation('');setConsent(false);setSkills([]);
     setHostDenied(false);setConfirmClose(false);
+    if(roundState.current)roundState.current.authoritative=false;
   }
   async function loadOwn(expectedIdentity = identity.current) {
     try {
@@ -97,15 +103,35 @@ export default function GameApp({ eventId }: { eventId: string }) {
       throw error;
     }
   }
-  const loadBoard = useCallback(async () => {
+  const acceptEvent = useCallback((event:Board['event'],authoritative=false) => {
+    const current=roundState.current?.eventId===eventId?roundState.current:null;
+    // One round only advances: a CDN response cannot undo opening or final closure.
+    if(current && ((roundOrder[current.event.status]??-1)>(roundOrder[event.status]??-1) ||
+      (current.event.status===event.status && current.authoritative && !authoritative)))return current.event;
+    roundState.current={eventId,event,authoritative};
+    return event;
+  },[eventId]);
+  const loadBoard = useCallback(():Promise<Board> => {
+    const url=`${base}/board?page=${page}`;
+    // Manual refreshes and polling share one request, including while it times out.
+    if(boardLoad.current?.url===url)return boardLoad.current.promise;
     boardRequest.current?.abort();
     const controller = new AbortController();
     boardRequest.current = controller;
-    const result = await api<Board>(`${base}/board?page=${page}`,{signal:controller.signal});
-    if(controller.signal.aborted) throw new DOMException('Aborted','AbortError');
-    setBoard(result);
-    return result;
-  },[base,page]);
+    const promise=(async()=>{
+      try {
+        const result = await api<Board>(url,{signal:controller.signal});
+        if(controller.signal.aborted) throw new DOMException('Aborted','AbortError');
+        const accepted={...result,event:acceptEvent(result.event)};
+        setBoard(accepted);
+        return accepted;
+      } finally {
+        if(boardRequest.current===controller){boardRequest.current=null;boardLoad.current=null;}
+      }
+    })();
+    boardLoad.current={url,promise};
+    return promise;
+  },[base,page,acceptEvent]);
   async function refresh() {
     setBusy(true);
     try {
@@ -127,6 +153,7 @@ export default function GameApp({ eventId }: { eventId: string }) {
         if (error instanceof ApiError && error.status === 401) setMessage('Sign in with Google to join.');
         else throw error;
       }
+      if(tab==='host' && identity.current)await hostAction('state',false);
       if(boardResult.status==='rejected')throw boardResult.reason;
     } catch (error) { setMessage(describe(error)); }
     finally { setBusy(false); setLoaded(true); }
@@ -139,25 +166,48 @@ export default function GameApp({ eventId }: { eventId: string }) {
     return ()=>clearInterval(timer);
   },[]);
   useEffect(() => {
-    if (tab !== 'board') return;
+    if (tab === 'host') return;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let stopped = false, running = false, failures = 0;
+    let stopped = false, running = false, resumeRequested = false, failures = 0;
+    if(!lastActivity.current)lastActivity.current=performance.now();
+    const status = () => roundState.current?.eventId===eventId?roundState.current.event.status:null;
+    const inactive = () => status()!=='open' && performance.now()-lastActivity.current>=draftIdleLimit;
+    function schedule(delay:number) {
+      if(stopped || document.visibilityState!=='visible' || status()==='closed' || inactive() || failures>=5)return;
+      const remaining=status()==='open'?delay:Math.max(0,draftIdleLimit-(performance.now()-lastActivity.current));
+      timer=setTimeout(poll,Math.min(delay,remaining));
+    }
     async function poll() {
       clearTimeout(timer);
-      if (stopped || running || document.visibilityState !== 'visible') return;
+      if (stopped || running || document.visibilityState !== 'visible' || status()==='closed' || inactive() || failures>=5) return;
       running = true;
       try {
-        const result = await loadBoard(); failures = 0;
-        if (!stopped && document.visibilityState==='visible' && result.event.status === 'open') timer = setTimeout(poll,27_000+Math.random()*6_000);
+        await loadBoard(); failures = 0;
       } catch {
-        failures++;
-        if (!stopped && document.visibilityState==='visible' && failures < 5) timer = setTimeout(poll,Math.min(120_000,30_000*2**failures));
-      } finally { running = false; }
+        if(!resumeRequested && document.visibilityState==='visible')failures++;
+      } finally {
+        running = false;
+        if(resumeRequested){resumeRequested=false;void poll();}
+        else schedule(failures?Math.min(120_000,30_000*2**failures*(0.9+Math.random()*0.2)):27_000+Math.random()*6_000);
+      }
     }
-    function visible() { if (document.visibilityState === 'visible') void poll(); else {clearTimeout(timer);boardRequest.current?.abort();} }
+    function activity() {
+      const resume=inactive() || failures>=5;
+      lastActivity.current=performance.now();
+      if(resume){failures=0;void poll();}
+    }
+    function visible() {
+      if (document.visibilityState === 'visible') {
+        lastActivity.current=performance.now();failures=0;
+        if(running)resumeRequested=true;else void poll();
+      }
+      else {clearTimeout(timer);boardRequest.current?.abort();}
+    }
     void poll(); document.addEventListener('visibilitychange',visible);
-    return ()=>{stopped=true;clearTimeout(timer);boardRequest.current?.abort();document.removeEventListener('visibilitychange',visible);};
-  },[tab,loadBoard]);
+    document.addEventListener('pointerdown',activity);document.addEventListener('keydown',activity);
+    return ()=>{stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);document.removeEventListener('pointerdown',activity);document.removeEventListener('keydown',activity);};
+  },[tab,loadBoard,eventId]);
+  useEffect(()=>()=>{boardRequest.current?.abort();},[eventId]);
   async function signIn() {
     setBusy(true);
     try {
@@ -212,7 +262,7 @@ export default function GameApp({ eventId }: { eventId: string }) {
     try {await api(`${base}/me/profile`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({recruitmentConsent:consent,skills})});setMessage('Preferences saved.');}
     catch(error){setMessage(describe(error));}finally{setBusy(false);}
   }
-  async function hostAction(action: 'state'|'open'|'close'|'reveal') {
+  async function hostAction(action: 'state'|'open'|'close'|'reveal',refreshPublic=true) {
     const requestedIdentity=identity.current;
     if(!requestedIdentity)return;
     setBusy(true);
@@ -229,16 +279,22 @@ export default function GameApp({ eventId }: { eventId: string }) {
           confirmed=true;
           if(identity.current!==requestedIdentity)return;
           const receipt=changed;
-          setBoard(current=>current?{...current,event:{...current.event,status:receipt.status,closesAt:receipt.closes_at??current.event.closesAt}}:current);
+          if(roundState.current?.eventId===eventId) {
+            const event=acceptEvent({...roundState.current.event,status:receipt.status,closesAt:receipt.closes_at??roundState.current.event.closesAt},true);
+            setBoard(current=>current?{...current,event}:current);
+          }
           setConfirmClose(false);
         }
-        const [privateState,publicState]=await Promise.allSettled([api<HostState>(`${base}/host/state`),loadBoard()]);
+        const [privateState,publicState]=await Promise.allSettled([api<HostState>(`${base}/host/state`),refreshPublic?loadBoard():Promise.resolve(null)]);
         if(identity.current!==requestedIdentity)return;
         if(privateState.status==='fulfilled') {
           setHost(privateState.value);
           const authoritative=privateState.value.event;
           // Private host state is uncached; public standings can be ten seconds older.
-          if(authoritative)setBoard(current=>current?{...current,event:authoritative}:current);
+          if(authoritative) {
+            const event=acceptEvent(authoritative,true);
+            setBoard(current=>current?{...current,event}:current);
+          }
           else if(changed) {const receipt=changed;setBoard(current=>current?{...current,event:{...current.event,status:receipt.status,closesAt:receipt.closes_at??current.event.closesAt}}:current);}
         } else {
           if(!confirmed)throw privateState.reason;
@@ -258,7 +314,7 @@ export default function GameApp({ eventId }: { eventId: string }) {
     } finally {setBusy(false);}
   }
   const seconds = board?.event.closesAt ? Math.max(0,Math.ceil((new Date(board.event.closesAt).getTime()-clock)/1000)) : null;
-  const open = board?.event.status==='open' && (seconds===null || seconds>0);
+  const open = board?.event.status==='open';
   const roundLabel = !board?'Loading event':board.event.status==='draft'?'Waiting for the host':open?'Round open':'Round closed';
   const available = own?.codes.filter(item=>!item.spent).length ?? 0;
   const winners = host?.players.filter(player=>host.firstLineWinners.includes(player.participationId)) ?? [];
