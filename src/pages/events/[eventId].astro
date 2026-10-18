@@ -1,5 +1,6 @@
 ---
 import GameApp from '../../components/GameApp';
+import MotionEffects from '../../components/MotionEffects.astro';
 import '../../styles/global.css';
 export const prerender = false;
 const eventId = (Astro.params.eventId ?? '').toLowerCase();
@@ -10,5 +11,5 @@ Astro.response.headers.set('Referrer-Policy','no-referrer');
 <!doctype html>
 <html lang="en">
   <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>Play · GDG Bingo</title></head>
-  <body><main><a href="/">GDG Bingo</a><GameApp eventId={eventId} client:load /></main></body>
+  <body><GameApp eventId={eventId} client:load /><MotionEffects /></body>
 </html>

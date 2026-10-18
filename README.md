@@ -10,6 +10,14 @@ controls, reveal and exports. Hosted acceptance and event readiness are pending.
 See [development status](docs/development-status.md) and [specifications](docs/index.md).
 The isolated integration spike stays in `spikes/phase1`.
 
+The UI follows the owner-approved light GDG direction based on
+[GDG DP Blast](https://frame.gdgpup.org/). The landing page accepts an organiser's
+event link; player cards, private outgoing codes, board and host controls share
+the same responsive layout. Logo assets and the Outfit font are served locally.
+Reference-inspired animation includes floating shapes, fade-up entrances and
+hover effects. Use the pause icon in the header to stop motion; operating-system
+reduced-motion preferences are respected automatically.
+
 ## Local development
 
 Node 24 and npm are required. From the repository root:

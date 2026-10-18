@@ -1,5 +1,8 @@
 ---
 import ReturnToEvent from '../components/ReturnToEvent';
+import EventEntry from '../components/EventEntry';
+import MotionEffects from '../components/MotionEffects.astro';
+import { BrandHeader, BrandFooter, Decorations, Icon } from '../components/Brand';
 import '../styles/global.css';
 export const prerender = true;
 ---
@@ -7,26 +10,40 @@ export const prerender = true;
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>GDG Bingo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Meet someone new with GDG Bingo. Two codes, new conversations, and your next teammate." />
+    <meta name="theme-color" content="#f8f9fa" />
+    <link rel="icon" type="image/png" href="/brand/gdg-mark.png" />
+    <title>GDG Bingo · Meet your next teammate</title>
   </head>
   <body>
-    <main>
-      <h1>GDG Bingo</h1>
-      <p>Meet someone new. Find your next teammate.</p>
-      <section class="panel">
-        <h2>How to play</h2>
-        <ol>
-          <li>Open the event link shared by your organiser and sign in with Google.</li>
-          <li>Join with your private invitation. You get two outgoing codes.</li>
-          <li>Find someone who matches a square and message them on Teams.</li>
-          <li>Paste a code they give you to claim that square. Each code works once.</li>
-        </ol>
-        <p>A full row, column, or diagonal is bingo. The centre is free.</p>
-        <p class="muted">Each person has only two codes to give. Your own codes are for other players. Both can go to the same person for different squares.</p>
-      </section>
-      <p>Use your organiser’s event link to join. This development build is awaiting its deployment and event-readiness checks.</p>
-      <ReturnToEvent client:load />
-    </main>
+    <div class="app-frame">
+      <a class="skip-link" href="#main">Skip to content</a>
+      <Decorations />
+      <BrandHeader><a class="header-help" href="#how-to-play">How to play</a><a class="button primary" href="#join-event">Join an event</a></BrandHeader>
+      <main id="main">
+        <section class="shell landing-hero">
+          <div class="hero-content">
+          <p class="eyebrow">GDG on Campus · PUP Manila</p>
+          <h1><span>Meet.</span><span>Connect.</span><span>Bingo.</span></h1>
+          <p class="subtitle">A familiar game. A room full of possibilities.<br />Find someone new. Find your next teammate.</p>
+          <div class="hero-actions"><a href="#join-event" class="button primary">Let’s play <Icon name="arrow" /></a><a href="#how-to-play" class="button">How it works</a></div>
+          </div>
+          <EventEntry client:load />
+          <ReturnToEvent client:load />
+        </section>
+        <section id="how-to-play" class="shell process-section">
+          <div class="section-heading"><p class="eyebrow">Less scrolling. More connecting.</p><h2>New connections, one square at a time.</h2><p class="muted">Your organiser brings the room. You bring the conversation.</p></div>
+          <div class="process-grid">
+            <article class="panel"><div class="icon-chip blue"><Icon name="people" /></div><h3>Join your room.</h3><p>Open your event link, sign in with Google, and enter your private invitation. Your personal card and two outgoing codes are ready.</p></article>
+            <article class="panel"><div class="icon-chip red"><Icon name="wallet" /></div><h3>Find your match.</h3><p>Meet someone who matches a square. Ask for their code in a Teams DM. Give your own codes to people who find a match in you.</p></article>
+            <article class="panel"><div class="icon-chip yellow"><Icon name="trophy" /></div><h3>Make it bingo.</h3><p>Select a matching square on your card and paste their code. Complete a row, column, or diagonal. The centre is free.</p></article>
+          </div>
+          <p class="rules-note">Two codes per player. Each works once. Both can go to the same person for different squares.<br />You never need to select a square to give someone your code.</p>
+        </section>
+      </main>
+      <BrandFooter />
+    </div>
+    <MotionEffects />
   </body>
 </html>

@@ -13,3 +13,6 @@ cockpit.html
 **/test-results/
 **/.private/
 
+# Local design context, downloaded references and canvas resume state
+.superdesign/
+

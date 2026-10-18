@@ -7,15 +7,17 @@ performed by the agent.
 
 ## Publish the reviewed source
 
-The application is currently uncommitted on `feat/8-phase1-spikes`. Review and
-commit the source, then push that branch yourself. Importing the old `main`
+The base application was pushed as `9ef5f72` on `feat/8-phase1-spikes` and
+deployed as a Vercel Preview. The approved UI, event-link interaction and
+development React cache fix are included in the owner's requested local UI
+commit. Push that same branch yourself to publish the changes. Importing the old `main`
 does not include this application. Follow the repository's PR-to-`dev` policy;
 do not merge to `main` just to make a rehearsal available.
 
 Suggested commit message:
 
 ```text
-feat: implement two-code bingo game and rehearsal checks
+feat: apply approved GDG Bingo UI and fix development hydration
 ```
 
 Never stage `.env`, `.private/`, `test-results/`, generated artifacts or

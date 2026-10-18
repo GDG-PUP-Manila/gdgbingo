@@ -3,9 +3,11 @@
 This is an implementation checkpoint, not a launch approval. The owner
 authorised development against the Draft specifications. Private SPINE
 validation/document locks, hosted verification, and event readiness remain open.
-No commits, pushes, issue closures or Vercel deployments were performed.
-Evidence describes the uncommitted working tree on `feat/8-phase1-spikes`,
-not a released commit. Capture the reviewed commit ID when publishing it.
+The initial implementation evidence described the uncommitted working tree.
+The user subsequently committed and pushed `9ef5f72` on `feat/8-phase1-spikes`
+and deployed it as a Vercel Preview. Hosted observations below refer to that
+commit; subsequent evidence-only edits are not part of its deployed source.
+No GitHub issues have been closed by the agent.
 
 ## Approved rules
 
@@ -136,3 +138,144 @@ For the application Vercel project, use repository root `.` rather than
 `spikes/phase1`. Keep the rehearsal on development credentials. The configured
 function region is Singapore (`sin1`), matching the development Neon region;
 actual deployed placement and latency remain unverified.
+
+## Hosted preview observations — 2026-10-18
+
+Preview source: `9ef5f72`; branch alias:
+`https://gdgbingo-git-feat-8-phase1-spikes-gdgpupmnls-projects.vercel.app`.
+The first probe redirected all requests to Vercel login (302). Subsequent
+requests reached the application after the user adjusted preview access.
+The user reported the second account's saved card loading and showed the
+host's controls, closed round, both players' one-square progress and one
+remaining outgoing code each. This is browser evidence supplied by the user.
+
+Low-volume unauthenticated HTTP probes confirmed:
+
+- `/api/session`, event `me` and event `host/state` return 401 rather than
+  private data, with `Cache-Control: private, no-store`.
+- The public board returns 200; repeated requests produced Vercel `MISS`
+  followed by `HIT`. A request carrying an arbitrary non-authentication cookie
+  returned the same body and a cache HIT. Neither board response set cookies.
+- Board player fields were exactly display name, claimed count, line count,
+  blackout and codes remaining. No private codes or account IDs were present.
+
+These probes establish public cache operation and anonymous guards, not full
+two-signed-in-user isolation, cold-start performance or 350-player capacity.
+
+Prepared fresh development event `28b13ac3-b8a8-45db-abfa-6f05914c8f8f`, titled
+**GDG Bingo HTTPS rehearsal**. Both existing test accounts joined with their
+existing display names, fresh stable cards, zero claims and two codes each.
+The original host remains host; the fresh event is draft. The previous event
+was preserved without reopening it or resetting its codes. Private invitations
+remain only in the ignored event manifest; none were printed.
+
+The user subsequently demonstrated successful HTTPS claims in both directions,
+confirmed both of the host's codes became spent, and showed standings with
+Kian at two claims and the host at one. Reveal showed two distinct Figma
+confirmers and one Git confirmer, matching those exchanges. After the close,
+CSV and non-host-control checks were requested, the user confirmed the
+sequence was okay. Record closure/export/access results as user-reported
+manual evidence, not an independently captured signed-in HTTP trace.
+
+The two-account HTTPS rehearsal is therefore user-confirmed. Production OAuth
+audience, signed-in isolation under broader scenarios, actual region/headroom,
+shared-network sign-in, full-duration hosted capacity and release readiness
+remain pending. No hosted load burst or production promotion has occurred.
+
+## Approved UI implementation — 2026-10-18
+
+The owner selected the light GDG direction, requested `frame.gdgpup.org` as the
+reference, reviewed the Superdesign player-screen draft v3, and approved its
+implementation. The working tree now implements that direction across landing,
+invitation/sign-in, player card and private wallet, public board, host controls,
+skill reveal and optional preferences. The actual reference-site logo assets
+are stored locally under `public/brand/`; Outfit 5.3.0 is pinned and self-hosted
+through Fontsource. No runtime dependency on the design canvas was introduced.
+
+The landing page accepts an event link or ID and always navigates within this
+deployment. Giving and receiving codes have separate instructions. Preferences
+are collapsed and consent remains off by default. Host closure requires an
+explicit confirmation. Claim receipts update the card immediately; a subsequent
+refresh failure no longer mislabels a confirmed claim as an unknown outcome.
+Unknown claims still retry the identical persisted request ID and payload.
+
+Validation on this working tree:
+
+- Astro checking: 39 files, zero errors, warnings or hints.
+- Production build and `verify:build` passed; private dynamic routes, Node 24
+  artifact, Singapore configuration and static secret checks remain intact.
+- All 38 Node unit/integration checks passed against isolated local PostgreSQL.
+- All 12 Chromium browser checks passed. These use mocked HTTP for gameplay and
+  the built static landing page for event entry, with 360px mobile and 1440px
+  desktop screenshots. Visible buttons meet 44px minimum dimensions; checked
+  mobile pages have no horizontal overflow. This is not a full accessibility
+  audit or a signed-in hosted browser acceptance run.
+- The dependency install reported zero audit vulnerabilities; existing beta
+  auth peer-dependency warnings remain as previously documented.
+
+Screenshots remain ignored in `test-results/`; canvas context and resume state
+remain ignored in `.superdesign/`. No existing event, invitation or issued code
+was reset. No database migration, commit, push or deployment was performed in
+this UI implementation pass. Production OAuth audience, quota/capacity and
+event-readiness gates described above remain open.
+
+### Local development follow-up
+
+After the owner reported the landing action still failing, a browser against
+the existing localhost server reproduced `_jsxDEV is not a function` in
+`EventEntry`. Its Vite dependency file contained React's production JSX-dev
+runtime (`jsxDEV` was undefined), and client rendering removed the entry form.
+The built-page checks had not exercised this development-server failure.
+Astro configuration now isolates dependency caches by command so build/check
+cannot overwrite a running development server's cache. The production build
+and three landing browser cases pass after this change. After the owner
+confirmed the app worked, a fresh browser against localhost verified that the
+event-link input exists, clicking the play link focuses it, and no page errors
+occur. No user-owned server process was stopped by the agent. A fresh build
+artifact verification also passed before the updated Vercel preview handoff.
+
+### Deployment-testing recheck
+
+Fresh checks after the owner requested a final deployment/testing review:
+production build and artifact verification passed; Astro checking reported
+zero errors/warnings/hints across 39 files; all 38 Node checks and all 13
+Chromium browser cases passed; npm audit reported zero vulnerabilities.
+After the build/check run, a browser against the owner's existing localhost
+server confirmed the play action focuses a rendered event-entry input, no
+horizontal overflow at 390px, and no page errors. Anonymous requests to the
+existing hosted preview's session and host-state endpoints returned 401 with
+private/no-store. These hosted probes cover the already-deployed base commit,
+not the local UI changes, which still await commit/push. All five required
+local runtime settings were present; neither secret values nor cookies were
+printed, and no private environment or canvas state is tracked.
+
+Conclusion: ready for an updated Vercel preview and controlled testing with
+configured Google test accounts. This does not grant production/event launch
+acceptance or verify 350-player hosted capacity. The final host account is
+still to be supplied by the owner; full-round retesting needs a fresh test
+event if the earlier rehearsal is closed. No deployment, database mutation or
+host assignment was performed during this recheck.
+
+### Reference motion applied
+
+The owner subsequently requested the effects and animation from
+`https://frame.gdgpup.org/`. A fresh browser inspection of that site verified
+four staggered 5.6/5.8/6.0/6.2-second shape bounces, 650–900ms fade-up entrances,
+and 200ms button/card hover lift and scale. Those patterns are now applied to
+Bingo, with a fading graph-paper background and small desktop-pointer parallax.
+Claim and confirmation panels have short entrances; confirmed squares briefly
+emphasise success. Gameplay state and API contracts did not change.
+
+A native checkbox control in the header pauses motion without relying on React
+hydration. Reduced-motion preferences disable entrances, bounces, transitions
+and parallax while leaving content visible. Pointer effects are limited to
+fine mouse pointers, throttled with requestAnimationFrame, and reset when the
+page loses visibility/focus. No animation service or dependency was added.
+
+Validation: production build and artifact verification passed; Astro checking
+reported zero diagnostics across 41 files; all 15 Chromium browser cases passed,
+including pause/reduced-motion and the existing claim/host flows. A live
+localhost browser independently observed the bounce and parallax, one pause
+control, no page errors and no horizontal overflow. The owner subsequently
+authorised a local commit of this UI/motion changeset and will run the push
+themselves. Remote publication and Vercel deployment remain owner-controlled.
