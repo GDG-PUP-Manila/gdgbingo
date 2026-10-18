@@ -3,7 +3,7 @@ spine_type: OPS
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.1
+doc_version: 0.2
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -15,8 +15,11 @@ reconciled: 2026-10-18
 
 **SDD:** [sdd-gdgbingo.md](sdd-gdgbingo.md)
 
-Nothing is deployed. Commands below are planned and must be tested before this
-document can be locked.
+The existing public site is https://gdgbingo.vercel.app/ (HTTP 200 observed
+2026-10-18). Its exact deployed commit, production environment configuration
+and Git branch tracking remain unverified: the current Vercel CLI account
+cannot access the hosting team. Local checks and the earlier two-account
+rehearsal do not establish production capacity or complete this runbook.
 
 ---
 
@@ -24,13 +27,25 @@ document can be locked.
 
 | Environment | URL | Branch | Deploy trigger | Owner |
 |-------------|-----|--------|----------------|-------|
-| Production | `<project>.vercel.app` (TBD) | `main` | Vercel Git integration, after Hobby eligibility is confirmed | slvdrvncntjvr |
+| Production | `https://gdgbingo.vercel.app/` | `main` intended; verify Vercel setting | Vercel Git integration; production tracking and eligibility still need confirmation | slvdrvncntjvr |
 | Preview | Vercel preview URLs | PR branches | Vercel Git integration | slvdrvncntjvr |
 | Local | `http://localhost:4321` | any | `npm run dev` | developer |
 
 Production and preview/test use separate Neon branches or databases.
 
 ## 2. Deploy
+
+Promote `dev` to `main` through a pull request. In the existing Vercel project's
+Settings → Environments → Production → Branch Tracking, select `main`.
+Use the repository root, Astro, `npm ci` and `npm run build`; root
+`engines.node` selects Node 24.x for builds and functions. Confirm the existing
+production secrets in §3, preserving code keys for already-issued tokens and
+using the matching production database/Auth branch. Preview/test credentials
+remain scoped separately. The production origin must be trusted in Neon Auth.
+These account settings require a maintainer with hosting-team access; changing
+GitHub branches alone does not verify a new production deployment.
+
+Configuration reference (2026-10-18): [Vercel Git deployment settings](https://vercel.com/docs/git).
 
 | Step | Command | Notes |
 |------|---------|-------|

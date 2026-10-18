@@ -3,7 +3,7 @@ spine_type: BUILD
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.2
+doc_version: 0.3
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -78,6 +78,14 @@ capacity and QAD acceptance remain separate; k6 is a future hosted-test candidat
 See [spike results](../spikes/phase1/results.md) for exact checks, dependency
 override, beta-peer warnings, and remaining limitations; see
 [setup](../spikes/phase1/SETUP.md) to configure the live test services.
+
+Node 24 enforcement (verified 2026-10-18): root `engines.node` selects `24.x`
+for Vercel; `.nvmrc` selects the same major locally. `.npmrc` enables
+`engine-strict` for installs and `devEngines.runtime` rejects other Node majors
+before npm install/ci/run commands. The tested local tools are Node 24.8.0 and
+npm 11. Use `nvm install 24.8.0` followed by `nvm use 24.8.0` on nvm-windows.
+Sources: [npm devEngines](https://docs.npmjs.com/cli/v11/configuring-npm/package-json/#devengines),
+[Vercel Node versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
 
 ### Known deprecations
 

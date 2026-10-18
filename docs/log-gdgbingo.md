@@ -3,7 +3,7 @@ spine_type: LOG
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.3
+doc_version: 0.4
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -19,6 +19,8 @@ reconciled: 2026-10-18
 
 | Date | Decision | Rationale | Docs touched |
 |------|----------|-----------|--------------|
+| 2026-10-18 | Release candidate verified on active nvm-windows Node 24.8.0 / npm 11.6.0: 39 unit/integration and 32 Chromium cases passed, Astro checked 44 files without diagnostics, build and Node 24 artifact checks passed | Node 22 npm execution rejects with EBADDEVENGINES. Browser bundle resolution required filesystem escalation, then all cases passed. Canonical SPINE validation still has the two pre-existing supplementary-frontmatter errors and three TBD warnings; no checkpoint tags exist | release evidence, BUILD, LOG |
+| 2026-10-18 | Owner authorised promoting all integrated application changes from `dev` to `main` for production and enforcing Node 24 | Release via the documented `dev` → `main` PR; npm runtime enforcement and version hint added. Existing Vercel CLI identity cannot access the hosting team `gdgpupmnls-projects`, so production branch tracking, deployed commit and production secrets remain unverified; no production migration or new keys | README, BUILD, OPS, INDEX, LOG, runtime configuration |
 | 2026-10-18 | Fixed round lifecycle polling, browser-clock admission gating and stale Host Refresh on integrated `dev` using supervised Orca workers | PRD-F6, PRD-F7 and PRD-F8; implementation in `src/components/GameApp.tsx:106`, `:135`, `:169` and `:317`; 12 added browser regressions in `tests/e2e/game.spec.ts` | root UI, tests, LOG |
 | 2026-10-18 | Owner authorised feature-branch integration into `dev` and audit remediation; this documentation pass starts from `dev` at `4272176` | Preserve the BUILD branch policy: feature/fix work targets `dev`, and release promotion remains a separate `dev` → `main` PR; integration does not lock documents, reconcile them, or approve launch | index.md, log-gdgbingo.md |
 | 2026-10-18 | Owner approved the GDG-reference UI and requested matching motion, then authorised a local commit while reserving push for themselves | Build/artifact and type checks passed; 15 browser cases passed including motion/reduced-motion and claim/host flows; no push or deployment by agent | root UI, styles, motion, tests, README, development-status.md |

@@ -3,7 +3,7 @@ spine_type: INDEX
 spine_version: 0.3.0
 project: GDG Bingo
 slug: gdgbingo
-doc_version: 0.3
+doc_version: 0.4
 status: Draft
 owner: slvdrvncntjvr
 created: 2026-10-18
@@ -30,9 +30,9 @@ Built on SPINE 0.3.0
 | PRD · Product Requirements | [prd-gdgbingo.md](prd-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
 | SDD · System Design | [sdd-gdgbingo.md](sdd-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
 | QAD · QA & Test Plan | [qad-gdgbingo.md](qad-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
-| OPS · Ops & Observability | [ops-gdgbingo.md](ops-gdgbingo.md) | 0.1 | Draft | 2026-10-18 | 2026-10-18 |
-| BUILD · Build Guide | [build-gdgbingo.md](build-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
-| LOG · Session Log | [log-gdgbingo.md](log-gdgbingo.md) | 0.3 | Draft | 2026-10-18 | 2026-10-18 |
+| OPS · Ops & Observability | [ops-gdgbingo.md](ops-gdgbingo.md) | 0.2 | Draft | 2026-10-18 | 2026-10-18 |
+| BUILD · Build Guide | [build-gdgbingo.md](build-gdgbingo.md) | 0.3 | Draft | 2026-10-18 | 2026-10-18 |
+| LOG · Session Log | [log-gdgbingo.md](log-gdgbingo.md) | 0.4 | Draft | 2026-10-18 | 2026-10-18 |
 
 **Materialized at repo root (not in `docs/`):** `AGENTS.md` (SPINE pointer),
 `CLAUDE.md`, `GEMINI.md`, IDE rule pointers. Owner source drafts

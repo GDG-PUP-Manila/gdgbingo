@@ -20,7 +20,18 @@ automatically.
 
 ## Local development
 
-Node 24 and npm are required. From the repository root:
+Node 24 and npm 11 are the tested development tools. `.nvmrc` selects the Node
+24 line for compatible version managers; npm rejects other Node majors before
+installing dependencies or running scripts. With nvm-windows, the locally tested
+version can be installed and selected explicitly:
+
+```powershell
+nvm install 24.8.0
+nvm use 24.8.0
+node --version
+```
+
+Then, from the repository root:
 
 ```powershell
 npm.cmd ci
@@ -94,8 +105,25 @@ the intended Vercel environment and add its exact HTTPS origin to Neon Auth.
 Google credentials remain configured in Neon; they are not runtime variables
 for this app.
 
-No Vercel deployment or production migration has been performed. The local
-350-player database baseline passed; hosted capacity is unverified.
+The existing public site is [gdgbingo.vercel.app](https://gdgbingo.vercel.app/).
+Use `main` for production and `dev` for ongoing work. In the existing Vercel
+project, set **Settings → Environments → Production → Branch Tracking** to
+`main`; pushes to `dev` should create previews. The connected Git repository,
+production branch and exact deployed commit still need verification by someone
+with access to the hosting team. Do not create a replacement project to work
+around missing team access. `engines.node` selects Node 24.x for Vercel builds
+and functions.
+
+Configure the five runtime secrets from `.env.example` in Vercel's Production
+environment. Use the intended production database and matching Auth branch;
+preserve the original code digest/encryption keys for any existing invitations
+and codes. `DATABASE_ENVIRONMENT` is a tooling guard for explicit migrations.
+The spike's `SPIKE_DATABASE_URL` is not the application's `DATABASE_URL`.
+
+This release does not apply production migrations. After deployment, verify
+Google sign-in, player join/card/claim, host start/close/export, and anonymous
+private-route rejection on the production origin. The local 350-player database
+baseline passed; hosted capacity is unverified.
 A Hobby account alone does not establish event eligibility or
 remaining quota. Resolve the [launch checks](docs/ops-gdgbingo.md) and production
 OAuth audience access before inviting attendees.
